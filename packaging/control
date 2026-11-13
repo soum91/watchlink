@@ -1,0 +1,10 @@
+Package: dev.watchlink.probe
+Name: WatchLink Probe
+Version: 0.1.0
+Architecture: iphoneos-arm64
+Description: Pairing-storage access research companion. Dual pairing is not implemented.
+Maintainer: WatchLink contributors
+Author: WatchLink contributors
+Section: Utilities
+Depends: firmware (>= 16.0)
+Homepage: https://github.com/soum91/watchlink

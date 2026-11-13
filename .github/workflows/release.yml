@@ -1,0 +1,100 @@
+name: Build and release
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths-ignore: ['repo/**']
+permissions:
+  contents: write
+concurrency:
+  group: watchlink-release
+  cancel-in-progress: false
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python3 -m unittest discover -s tests -v
+  native:
+    needs: validate
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Select Xcode with watchOS 27 SDK
+        shell: bash
+        run: |
+          set -euo pipefail
+          found=''
+          for developer in /Applications/Xcode*.app/Contents/Developer; do
+            sdk=$(DEVELOPER_DIR="$developer" xcrun --sdk watchos --show-sdk-version 2>/dev/null || true)
+            major=${sdk%%.*}
+            if [[ "$major" =~ ^[0-9]+$ ]] && (( major >= 27 )); then
+              echo "DEVELOPER_DIR=$developer" >> "$GITHUB_ENV"
+              found=yes
+              break
+            fi
+          done
+          if [[ -z "$found" ]]; then
+            echo '::error::A runner with Xcode and watchOS 27 SDK is required. No Watch binaries were published.'
+            exit 1
+          fi
+      - name: Install packaging tools
+        run: brew install ldid dpkg
+      - name: Compile both apps
+        run: python3 scripts/build.py --build-number '${{ github.run_number }}'
+      - name: Package rootless companion
+        run: python3 scripts/package_deb.py
+      - name: Verify actual artifacts
+        run: python3 scripts/verify_artifacts.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: WatchLink-compiled
+          path: dist/
+          if-no-files-found: error
+  publish:
+    needs: native
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: WatchLink-compiled
+          path: dist/
+      - name: Require an unpublished version
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -eu
+          if gh release view "v$(cat VERSION)" >/dev/null 2>&1; then
+            echo '::error::Increment VERSION and CHANGELOG before another release.'
+            exit 1
+          fi
+      - name: Generate Sileo index and source archive
+        run: |
+          set -eu
+          mkdir -p repo/pool
+          cp dist/*.deb repo/pool/
+          python3 scripts/repo_index.py --base-url "https://raw.githubusercontent.com/$GITHUB_REPOSITORY/main/repo"
+          version=$(cat VERSION)
+          git archive --format zip --prefix watchlink/ HEAD > "dist/WatchLink-$version-source.zip"
+          python3 scripts/checksums.py
+      - name: Publish actual package index
+        run: |
+          set -eu
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -f repo/Packages repo/Packages.gz repo/Release repo/pool/*.deb
+          if ! git diff --cached --quiet; then
+            git commit -m "Publish WatchLink $(cat VERSION) package index [skip ci]"
+            git push origin HEAD:main
+          fi
+      - name: Publish downloadable prerelease
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -eu
+          version=$(cat VERSION)
+          gh release create "v$version" dist/* --target "$GITHUB_SHA" --prerelease --title "WatchLink $version - access research probe" --notes-file RELEASE_NOTES.md

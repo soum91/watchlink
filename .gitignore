@@ -1,0 +1,13 @@
+build/
+dist/
+repo/pool/
+repo/Packages*
+repo/Release
+__pycache__/
+*.pyc
+*.mobileprovision
+*.p12
+*.p8
+*.pem
+*.key
+*.log

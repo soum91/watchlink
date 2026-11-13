@@ -1,0 +1,100 @@
+import Foundation
+import SwiftUI
+import WatchConnectivity
+import UniformTypeIdentifiers
+
+let watchLinkVersion = (Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "?")
+    + " (" + (Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "?") + ")"
+
+struct ReportDocument: FileDocument {
+    static var readableContentTypes: [UTType] { [.json] }
+    var text: String
+    init(text: String) { self.text = text }
+    init(configuration: ReadConfiguration) throws {
+        guard let data = configuration.file.regularFileContents,
+              let text = String(data: data, encoding: .utf8) else { throw CocoaError(.fileReadCorruptFile) }
+        self.text = text
+    }
+    func fileWrapper(configuration: WriteConfiguration) throws -> FileWrapper {
+        FileWrapper(regularFileWithContents: Data(text.utf8))
+    }
+}
+
+final class WatchLinkModel: NSObject, ObservableObject, WCSessionDelegate {
+    @Published var report: String
+    @Published var running = false
+    @Published var status = "Ready. Pairing state is unchanged."
+    @Published var protectedAccess = false
+    private let worker = DispatchQueue(label: "dev.watchlink.probe")
+    private var session: WCSession?
+    static var reportURL: URL {
+        FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+            .appendingPathComponent("WatchLink-report.json")
+    }
+    override init() {
+        report = (try? String(contentsOf: Self.reportURL, encoding: .utf8)) ?? "Run a scan to create a report."
+        super.init()
+        if WCSession.isSupported() {
+            session = WCSession.default
+            session?.delegate = self
+            session?.activate()
+        }
+    }
+    func scan() {
+        guard !running else { return }
+        running = true
+        let requested = protectedAccess
+        status = requested ? "Checking protected access…" : "Checking normal access…"
+        worker.async { [weak self] in
+            let text = DWRunProbe(requested)
+            do {
+                try text.write(to: Self.reportURL, atomically: true, encoding: .utf8)
+                DispatchQueue.main.async {
+                    self?.report = text; self?.running = false
+                    self?.status = "Report saved. No pairing changes made."
+                }
+            } catch {
+                DispatchQueue.main.async {
+                    self?.report = text; self?.running = false
+                    self?.status = "Scan finished; report could not be saved."
+                }
+            }
+        }
+    }
+    func sendReport() {
+        guard let session, session.activationState == .activated else {
+            status = "Companion connection is not activated."; return
+        }
+        guard FileManager.default.fileExists(atPath: Self.reportURL.path) else {
+            status = "Run a scan first."; return
+        }
+        session.transferFile(Self.reportURL, metadata: ["kind": "watchlink-report", "schema": 1])
+        status = "Transfer queued; delivery is not yet confirmed."
+    }
+    func session(_ session: WCSession, activationDidCompleteWith activationState: WCSessionActivationState, error: Error?) {
+        if error != nil { DispatchQueue.main.async { self.status = "Companion connection failed to activate." } }
+    }
+    func session(_ session: WCSession, didReceive file: WCSessionFile) {
+        guard file.metadata?["kind"] as? String == "watchlink-report" else { return }
+        do {
+            let values = try file.fileURL.resourceValues(forKeys: [.fileSizeKey])
+            guard let size = values.fileSize, size <= 128 * 1024 else { return }
+            let data = try Data(contentsOf: file.fileURL)
+            guard let json = try JSONSerialization.jsonObject(with: data) as? [String: Any],
+                  json["app"] as? String == "WatchLink", json["schema"] as? Int == 1,
+                  let text = String(data: data, encoding: .utf8) else { return }
+            let destination = Self.reportURL.deletingLastPathComponent().appendingPathComponent("WatchLink-received-report.json")
+            try data.write(to: destination, options: .atomic)
+            DispatchQueue.main.async { self.report = text; self.status = "Received companion report." }
+        } catch { DispatchQueue.main.async { self.status = "Could not import companion report." } }
+    }
+    func session(_ session: WCSession, didFinish fileTransfer: WCSessionFileTransfer, error: Error?) {
+        DispatchQueue.main.async {
+            self.status = error == nil ? "Report transfer completed." : "Report transfer failed. Keep the report and retry."
+        }
+    }
+    #if os(iOS)
+    func sessionDidBecomeInactive(_ session: WCSession) {}
+    func sessionDidDeactivate(_ session: WCSession) { session.activate() }
+    #endif
+}

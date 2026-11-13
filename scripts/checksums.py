@@ -1,0 +1,7 @@
+#!/usr/bin/env python3
+from pathlib import Path
+import hashlib
+root=Path(__file__).resolve().parents[1]/"dist"
+files=sorted(p for p in root.iterdir() if p.is_file() and p.name!="SHA256SUMS")
+if not files: raise SystemExit("No release artifacts to checksum.")
+(root/"SHA256SUMS").write_text("".join(hashlib.sha256(p.read_bytes()).hexdigest()+"  "+p.name+"\n" for p in files))
