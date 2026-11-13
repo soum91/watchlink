@@ -1,0 +1,14 @@
+Origin: WatchLink
+Label: WatchLink Research
+Suite: stable
+Codename: watchlink
+Architectures: iphoneos-arm64
+Components: main
+Description: Experimental pairing access probe
+Date: Fri, 13 Nov 2026 22:02:00 +0000
+MD5Sum:
+ a394667fe13eba14ef1f45a7f318634c              591 Packages
+ 0c2918b2ff704bd84d84056ff61240cf              393 Packages.gz
+SHA256:
+ 859a564706898e40102ad9165f42675eaf608b662b661ad0142705cf23a0bc00              591 Packages
+ 91a40425e03d3a4dd4ae9addd39e8c9b025a083ece59e48080ada831b3513135              393 Packages.gz
