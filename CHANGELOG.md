@@ -10,5 +10,6 @@
 - Add metadata-only reports, WatchConnectivity transfer, Copy, Share, and Files export.
 - Add installed version/build, a native icon, rootless packaging, and automated Sileo index generation.
 - Select the dedicated Xcode 27 runner for the Watch SDK.
+- Keep the iPhone document-export type out of the watchOS target.
 - Add real-artifact validation and checksummed GitHub prereleases.
 - Dual pairing and phone switching are not implemented; device execution remains unverified.

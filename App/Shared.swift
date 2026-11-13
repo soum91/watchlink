@@ -6,6 +6,7 @@ import UniformTypeIdentifiers
 let watchLinkVersion = (Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "?")
     + " (" + (Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "?") + ")"
 
+#if os(iOS)
 struct ReportDocument: FileDocument {
     static var readableContentTypes: [UTType] { [.json] }
     var text: String
@@ -19,6 +20,7 @@ struct ReportDocument: FileDocument {
         FileWrapper(regularFileWithContents: Data(text.utf8))
     }
 }
+#endif
 
 final class WatchLinkModel: NSObject, ObservableObject, WCSessionDelegate {
     @Published var report: String
