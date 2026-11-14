@@ -10,6 +10,34 @@
 #import <sys/stat.h>
 #import <unistd.h>
 
+#if TARGET_OS_IOS
+NSString *DWCopyReport(NSString *text) {
+    if (!NSThread.isMainThread) return @"Copy could not run on the main thread.";
+    @try {
+        UIPasteboard.generalPasteboard.string = text;
+        return nil;
+    } @catch (__unused NSException *exception) {
+        return @"Clipboard access was denied. Use Share, Save, or select the report text.";
+    }
+}
+
+UIViewController *DWMakeReportExporter(NSURL *fileURL) {
+    if (!NSThread.isMainThread || !fileURL.isFileURL ||
+        ![NSFileManager.defaultManager fileExistsAtPath:fileURL.path]) return nil;
+    @try {
+        return [[UIDocumentPickerViewController alloc] initForExportingURLs:@[fileURL] asCopy:YES];
+    } @catch (__unused NSException *exception) { return nil; }
+}
+
+UIViewController *DWMakeReportSharer(NSURL *fileURL) {
+    if (!NSThread.isMainThread || !fileURL.isFileURL ||
+        ![NSFileManager.defaultManager fileExistsAtPath:fileURL.path]) return nil;
+    @try {
+        return [[UIActivityViewController alloc] initWithActivityItems:@[fileURL] applicationActivities:nil];
+    } @catch (__unused NSException *exception) { return nil; }
+}
+#endif
+
 static void *Resolve(void *library, const char *a, const char *b) {
     void *value = dlsym(library, a);
     return value ?: (b ? dlsym(library, b) : NULL);

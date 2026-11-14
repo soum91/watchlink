@@ -1,12 +1,12 @@
-WatchLink 0.1.0 is an experimental pairing-storage access probe, not dual pairing.
+WatchLink 0.1.1 fixes report export controls.
 
-- iPhone companion and Watch app with user-initiated access checks.
-- Optional bounded MCM protected-path probe with own-cache restoration.
-- Metadata reports with Watch transfer, Copy, Share, and Files export.
-- Rootless companion packaging and a Sileo index generated only from real packages.
+- Copy, Share, and Save now handle taps independently.
+- A single presentation flow prevents overlapping share and document-picker sheets.
+- Save and Share use a JSON snapshot of the displayed report.
+- Clipboard/controller exceptions produce an error instead of escaping into Swift.
+- The report identifies its source as iPhone or Watch, and the latest received report survives relaunch.
 
-IPAs need personal signing. Protected Watch probing needs a provisioned dedicated
-App Group ending `.watchlink.probe`. Sileo installs only the iPhone companion.
-
-Physical execution, watchOS 27.2 pairing-state access, key preservation, and phone
-switching remain unverified. Pairing records and MobileGestalt are never changed.
+This release remains an access probe; multi-phone pairing is not implemented.
+Sileo installs the iPhone companion. Watch IPAs need signing and the protected
+Watch probe needs its provisioned App Group. Physical iOS 16 jailbreak behavior
+still requires user verification; simulator checks do not establish device behavior.

@@ -1,5 +1,14 @@
 # Validation
 
+## 0.1.1 report-action regression coverage
+
+The release workflow now runs actual iOS simulator UI tests for independent Copy,
+Save, and Share actions, document-picker cancellation, repeated Save, and continued
+foreground execution. Native clipboard/export creation is guarded against
+Objective-C exceptions, and export input is a saved JSON snapshot. CI success
+must be checked in the associated release run. Physical Dopamine iOS 16.1.1 and
+watchOS behavior still require device verification.
+
 Preparation check on 2026-11-13: all six distribution tests passed. Python source
 compilation and shell syntax validation passed. Native build and Debian packaging
 correctly refused to generate artifacts without macOS/Xcode and a real executable.

@@ -3,7 +3,7 @@
 Experimental pairing-access research for Apple Watch Series 10 on watchOS 27.2,
 an iOS 16 Dopamine iPhone, and a stock iPhone on iOS 27.0.1.
 
-**0.1.0 is an access probe. Dual pairing, phone switching, key preservation,
+**0.1.1 is an access probe. Dual pairing, phone switching, key preservation,
 pairing compatibility bypasses, and a Watch jailbreak are not implemented.**
 
 ## Included
@@ -14,6 +14,8 @@ pairing compatibility bypasses, and a Watch jailbreak are not implemented.**
 - Metadata-only reports: no account/device identifiers, filenames, or key values.
 - WatchConnectivity report transfer to the currently paired iPhone.
 - iPhone Copy, Share, and Files export.
+- Independent report buttons and one native export presenter prevent overlapping sheets.
+- A report-source label identifies iPhone versus Watch results; the latest received report is retained.
 - Rootless Debian packaging, a Sileo index generator, checksums, and release workflow.
 
 No registry entries, pairing files, MobileGestalt values, daemon settings, or
@@ -102,6 +104,11 @@ python3 scripts/build.py --build-number 1
 python3 scripts/package_deb.py
 python3 scripts/verify_artifacts.py
 ```
+
+The release workflow additionally runs `scripts/ui_smoke.py` with XcodeGen on an
+iPhone simulator. It checks that Copy opens neither export sheet, Save opens only
+the document picker and can repeat after cancellation, and Share opens only its
+activity controller. Simulator success does not establish iOS 16 jailbreak behavior.
 
 Native compilation requires macOS/Xcode; Debian packaging also requires ldid and
 dpkg-deb. Compilation, package validation, and physical execution are separate.

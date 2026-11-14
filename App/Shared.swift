@@ -1,26 +1,9 @@
 import Foundation
 import SwiftUI
 import WatchConnectivity
-import UniformTypeIdentifiers
 
 let watchLinkVersion = (Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "?")
     + " (" + (Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "?") + ")"
-
-#if os(iOS)
-struct ReportDocument: FileDocument {
-    static var readableContentTypes: [UTType] { [.json] }
-    var text: String
-    init(text: String) { self.text = text }
-    init(configuration: ReadConfiguration) throws {
-        guard let data = configuration.file.regularFileContents,
-              let text = String(data: data, encoding: .utf8) else { throw CocoaError(.fileReadCorruptFile) }
-        self.text = text
-    }
-    func fileWrapper(configuration: WriteConfiguration) throws -> FileWrapper {
-        FileWrapper(regularFileWithContents: Data(text.utf8))
-    }
-}
-#endif
 
 final class WatchLinkModel: NSObject, ObservableObject, WCSessionDelegate {
     @Published var report: String
@@ -33,8 +16,24 @@ final class WatchLinkModel: NSObject, ObservableObject, WCSessionDelegate {
         FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
             .appendingPathComponent("WatchLink-report.json")
     }
+    static var receivedReportURL: URL {
+        reportURL.deletingLastPathComponent().appendingPathComponent("WatchLink-received-report.json")
+    }
+    var reportSource: String {
+        guard let data = report.data(using: .utf8),
+              let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let platform = json["platform"] as? String else { return "No scan report loaded" }
+        let source = platform == "watchOS" ? "Watch" : (platform == "iOS" ? "iPhone" : platform)
+        return "Report source: " + source + " · " + (json["os"] as? String ?? "OS unknown")
+    }
     override init() {
-        report = (try? String(contentsOf: Self.reportURL, encoding: .utf8)) ?? "Run a scan to create a report."
+        let candidates = [Self.reportURL, Self.receivedReportURL].sorted {
+            let first = (try? $0.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate) ?? .distantPast
+            let second = (try? $1.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate) ?? .distantPast
+            return first > second
+        }
+        report = candidates.lazy.compactMap { try? String(contentsOf: $0, encoding: .utf8) }.first
+            ?? "Run a scan to create a report."
         super.init()
         if WCSession.isSupported() {
             session = WCSession.default
@@ -85,7 +84,7 @@ final class WatchLinkModel: NSObject, ObservableObject, WCSessionDelegate {
             guard let json = try JSONSerialization.jsonObject(with: data) as? [String: Any],
                   json["app"] as? String == "WatchLink", json["schema"] as? Int == 1,
                   let text = String(data: data, encoding: .utf8) else { return }
-            let destination = Self.reportURL.deletingLastPathComponent().appendingPathComponent("WatchLink-received-report.json")
+            let destination = Self.receivedReportURL
             try data.write(to: destination, options: .atomic)
             DispatchQueue.main.async { self.report = text; self.status = "Received companion report." }
         } catch { DispatchQueue.main.async { self.status = "Could not import companion report." } }

@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.1.1
+
+- Give Copy, Share, and Save independent List-row button handling.
+- Replace concurrent SwiftUI export/share sheets with one UIKit presentation flow.
+- Save and share an immutable JSON file of the displayed report.
+- Catch clipboard and export-controller Objective-C exceptions and show usable errors.
+- Label reports as coming from iPhone or Watch and reopen the latest received report.
+- Add simulator UI regression checks for Copy, Save, Share, and repeated export actions.
+
 ## 0.1.0
 
 - Name the project WatchLink, without a fixed phone-count promise.
