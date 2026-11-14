@@ -119,3 +119,16 @@ jobs:
           set -eu
           version=$(cat VERSION)
           gh release create "v$version" dist/* --target "$GITHUB_SHA" --prerelease --title "WatchLink $version - access research probe" --notes-file RELEASE_NOTES.md
+      - name: Update FlareStore source after release publication
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -eu
+          version=$(cat VERSION)
+          gh api "repos/$GITHUB_REPOSITORY/releases/tags/v$version" > "$RUNNER_TEMP/watchlink-release.json"
+          python3 scripts/flarestore_source.py --release-json "$RUNNER_TEMP/watchlink-release.json" --build-info dist/build-info.json
+          git add source.json
+          if ! git diff --cached --quiet; then
+            git commit -m "Update WatchLink FlareStore source for $version [skip ci]"
+            git push origin HEAD:main
+          fi

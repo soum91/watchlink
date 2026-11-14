@@ -35,6 +35,14 @@ Install the `iphoneos-arm64.deb` with Sileo. It installs the companion at
 `/var/jb/Applications/WatchLink.app`; it does not inject a daemon or install an
 app onto the Watch. Launch WatchLink and run a normal scan first.
 
+### FlareStore IPA source
+
+Add `https://raw.githubusercontent.com/soum91/watchlink/main/source.json` to FlareStore.
+The source indexes the published combined iPhone + Watch IPA, preserving native
+x.y.z versions, build numbers, actual byte sizes, and version history. Download
+with FlareStore and use EmberSign's Watch companion signing/installation flow.
+The source updates automatically after successful release publication.
+
 ### Watch and stock iPhone
 
 Use the combined `WatchLink-x.y.z-unsigned.ipa` with a Watch-aware signing tool

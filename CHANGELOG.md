@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- Add a FlareStore source for the published combined iPhone + Watch IPA.
+- Update the feed after successful releases using real asset sizes, native versions/builds, and retained version history.
+
 ## 0.1.1
 
 - Give Copy, Share, and Save independent List-row button handling.
