@@ -43,3 +43,18 @@ Size: 91472
 MD5sum: 45f07962df97608383e87d16f7fd52e4
 SHA256: cbd9aeab2a8a232225fb8585e874209528872b907cb2d6159db7c19905584a84
 
+Package: dev.watchlink.probe
+Name: WatchLink Probe
+Version: 0.1.3
+Architecture: iphoneos-arm64
+Description: Pairing-storage access research companion. Dual pairing is not implemented.
+Maintainer: WatchLink contributors
+Author: WatchLink contributors
+Section: Utilities
+Depends: firmware (>= 16.0)
+Homepage: https://github.com/soum91/watchlink
+Filename: https://raw.githubusercontent.com/soum91/watchlink/main/repo/pool/dev.watchlink.probe_0.1.3_iphoneos-arm64.deb
+Size: 95308
+MD5sum: 95c59d9574365b42001b0148678e3b8d
+SHA256: 0444e3d5eaf7cdb22a42e6c324cc786bd4cc5c0f4d2b0e74660694b9100c3c46
+
