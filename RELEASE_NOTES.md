@@ -1,20 +1,9 @@
-WatchLink 0.1.1 fixes report export controls.
+WatchLink 0.1.2 rebuilds the installation package through Xcode.
 
-- Copy, Share, and Save now handle taps independently.
-- A single presentation flow prevents overlapping share and document-picker sheets.
-- Save and Share use a JSON snapshot of the displayed report.
-- Clipboard/controller exceptions produce an error instead of escaping into Swift.
-- The report identifies its source as iPhone or Watch, and the latest received report survives relaunch.
+- Xcode now produces platform, SDK, deployment, bundle, and compiled icon metadata.
+- The Watch companion uses the modern PlugIns layout, matching the WristPane package layout.
+- Default sideload signatures no longer request an unprovisioned placeholder App Group.
+- The combined IPA remains the FlareStore download. A separate WatchLinkPhone IPA isolates iPhone installation if the combined install still stalls.
+- Protected scanning remains optional and needs a separately provisioned App Group.
 
-This release remains an access probe; multi-phone pairing is not implemented.
-Sileo installs the iPhone companion. Watch IPAs need signing and the protected
-Watch probe needs its provisioned App Group. Physical iOS 16 jailbreak behavior
-still requires user verification; simulator checks do not establish device behavior.
-
-Validation: native iPhone/watchOS compilation and real IPA/rootless package checks
-passed. On the iOS 26.4.1 simulator, Copy and Share passed and Save opened without
-crashing. The repeated Save/cancellation test did not pass: the simulator's first-use
-keyboard tutorial blocked Cancel. A revised test handles that tutorial, but its run
-stalled after simulator data-migration failure, before test execution. The full UI
-suite is therefore unverified and is available through manual workflow dispatch.
-Retry Copy and Save on the physical Dopamine iOS 16.1.1 phone after updating.
+This addresses packaging differences found while investigating an iPhone 17 installation stall. The stall's device-side error was not available, so no single cause or successful physical installation is claimed. Native compilation and package validation are distinct from device installation. Multi-phone pairing is not implemented.

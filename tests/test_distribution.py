@@ -52,4 +52,12 @@ class DistributionTests(unittest.TestCase):
             data=struct.pack("<8I",0xfeedfacf,0x0100000c,0,2,1,24,0,0)+struct.pack("<6I",0x32,24,platform,0,0,0)
             self.assertEqual(executable_platform(data),platform)
 
+    def test_universal_watch_executable_and_invalid_offsets(self):
+        leaf=struct.pack("<8I",0xfeedfacf,0x0200000c,0,2,1,24,0,0)+struct.pack("<6I",0x32,24,4,0,0,0)
+        header=struct.pack(">IIiiIII",0xcafebabe,1,0x0200000c,0,28,len(leaf),0)
+        self.assertEqual(executable_platform(header+leaf),4)
+        with self.assertRaises(ValueError): executable_platform(header[:-12]+struct.pack(">III",0,len(leaf),0)+leaf)
+        invalid_phone=struct.pack("<8I",0xfeedfacf,0x0200000c,0,2,1,24,0,0)+struct.pack("<6I",0x32,24,2,0,0,0)
+        with self.assertRaises(ValueError): executable_platform(invalid_phone)
+
 if __name__=="__main__": unittest.main()

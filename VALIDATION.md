@@ -45,3 +45,21 @@ Observed 0.1.1 results on 2026-11-14:
   is claimed.
 - Physical iOS 16.1.1 Copy/Save behavior and all Watch runtime behavior still need
   verification. Multi-phone pairing is not implemented.
+
+## 0.1.2 installation packaging investigation
+
+The 0.1.1 release IPA was inspected directly (SHA-256 c32505982b877f1c6005c8a7d423a57250519d14b291f6b4af3e299d6025eafa).
+Both executables request the placeholder App Group. The host minimum is iOS 16.0
+and the Watch minimum is watchOS 27.0 in both Info.plist and LC_BUILD_VERSION.
+Those deployment values do not by themselves explain an installation rejection on 27.2.
+
+Compared with the released WristPane 0.1.17 artifact, WatchLink had hand-written
+SDK/bundle metadata, legacy WatchKit app metadata, and the older Watch/ embedding
+layout. The new package delegates metadata and assets to Xcode and uses PlugIns/.
+Default sideload signatures request no App Groups. A phone-only diagnostic IPA
+is included to isolate iPhone installation from companion bundle validation.
+
+Seven local distribution checks pass. Native build and archive verification must
+pass in CI before publication. No physical iPhone 17 installation result or
+device-side installation error has been collected; the root cause of the reported
+stall remains unconfirmed.

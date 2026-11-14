@@ -49,7 +49,7 @@ jobs:
         run: |
           set -euo pipefail
           found=''
-          for developer in /Applications/Xcode*.app/Contents/Developer; do
+          for developer in $(python3 -c 'import glob,re; print(" ".join(sorted(glob.glob("/Applications/Xcode*.app/Contents/Developer"), key=lambda p: tuple(map(int,re.findall(r"[0-9]+",p))), reverse=True)))'); do
             sdk=$(DEVELOPER_DIR="$developer" xcrun --sdk watchos --show-sdk-version 2>/dev/null || true)
             major=${sdk%%.*}
             if [[ "$major" =~ ^[0-9]+$ ]] && (( major >= 27 )); then
@@ -63,7 +63,7 @@ jobs:
             exit 1
           fi
       - name: Install packaging tools
-        run: brew install ldid dpkg
+        run: brew install ldid dpkg xcodegen
       - name: Compile both apps
         run: python3 scripts/build.py --build-number '${{ github.run_number }}'
       - name: Package rootless companion

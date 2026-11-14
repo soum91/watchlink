@@ -1,6 +1,14 @@
 # Changelog
 
-## Unreleased
+## 0.1.2
+
+- Build iPhone and Watch apps through Xcode/XcodeGen instead of hand-writing installation metadata.
+- Use the modern PlugIns Watch companion layout and Xcode-generated icon catalogs.
+- Remove the unprovisioned placeholder App Group from default IPA signatures; keep it as an explicit opt-in signing template.
+- Add a phone-only diagnostic IPA to distinguish host installation from companion validation.
+- Validate universal watchOS executables and default entitlement requirements.
+
+## Distribution updates
 
 - Add a FlareStore source for the published combined iPhone + Watch IPA.
 - Update the feed after successful releases using real asset sizes, native versions/builds, and retained version history.

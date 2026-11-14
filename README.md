@@ -3,7 +3,7 @@
 Experimental pairing-access research for Apple Watch Series 10 on watchOS 27.2,
 an iOS 16 Dopamine iPhone, and a stock iPhone on iOS 27.0.1.
 
-**0.1.1 is an access probe. Dual pairing, phone switching, key preservation,
+**0.1.2 is an access probe. Dual pairing, phone switching, key preservation,
 pairing compatibility bypasses, and a Watch jailbreak are not implemented.**
 
 ## Included
@@ -52,8 +52,9 @@ This project does not establish a new pairing or bypass OS compatibility checks.
 
 IPAs contain ad-hoc development signatures and must be re-signed with your valid
 provisioning profiles. Protected Watch access requires a dedicated provisioned
-App Group ending `.watchlink.probe`; the source placeholder is
-`group.dev.watchlink.probe`. Provisioning App Groups may require a paid developer
+App Group ending `.watchlink.probe`; the optional signing template is
+`packaging/protected-probe.entitlements` (`group.dev.watchlink.probe`). Default IPAs
+request no App Groups, so a normal scan does not require provisioning this capability. Provisioning App Groups may require a paid developer
 team. A tool that strips this entitlement leaves only normal scanning available.
 
 The Watch app requires watchOS 27.0+; the phone app requires iOS 16.0+.
@@ -101,7 +102,7 @@ It becomes usable only after the real `Release`, `Packages.gz`, and `.deb` files
 are pushed. GitHub Pages is not required. This is a conventional unsigned
 package repository, not a cryptographically signed APT archive.
 
-Each release contains combined and Watch-only unsigned IPAs, a rootless `.deb`,
+Each release contains combined, Watch-only, and phone-only diagnostic unsigned IPAs, a rootless `.deb`,
 source ZIP, build metadata, and SHA256SUMS. Semantic versions cannot be reused.
 
 ## Validation
@@ -113,7 +114,7 @@ python3 scripts/package_deb.py
 python3 scripts/verify_artifacts.py
 ```
 
-The release workflow additionally runs `scripts/ui_smoke.py` with XcodeGen on an
+Manual workflow dispatch runs `scripts/ui_smoke.py` with XcodeGen on an
 iPhone simulator. It checks that Copy opens neither export sheet, Save opens only
 the document picker and can repeat after cancellation, and Share opens only its
 activity controller. Simulator success does not establish iOS 16 jailbreak behavior.

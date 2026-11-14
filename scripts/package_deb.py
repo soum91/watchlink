@@ -18,6 +18,7 @@ def main():
     target=stage/"var/jb/Applications/WatchLink.app"
     shutil.copytree(app,target)
     shutil.rmtree(target/"Watch",ignore_errors=True)
+    shutil.rmtree(target/"PlugIns/WatchLinkWatch.app",ignore_errors=True)
     shutil.rmtree(target/"_CodeSignature",ignore_errors=True)
     subprocess.run([args.ldid,"-S"+str(ROOT/"packaging/phone-jailbreak.entitlements"),str(target/"WatchLink")],check=True)
     control=stage/"DEBIAN"

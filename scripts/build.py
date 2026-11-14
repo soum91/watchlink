@@ -46,50 +46,70 @@ def icon(path, size):
         return struct.pack(">I",len(data))+kind+data+struct.pack(">I",zlib.crc32(kind+data)&0xffffffff)
     path.write_bytes(b"\x89PNG\r\n\x1a\n"+chunk(b"IHDR",struct.pack(">IIBBBBB",size,size,8,6,0,0,0))+chunk(b"IDAT",zlib.compress(bytes(scan),9))+chunk(b"IEND",b""))
 
-def build_app(platform, number):
-    watch = platform == "watchos"
-    sdk = output("xcrun","--sdk",platform,"--show-sdk-path")
-    sdk_version = output("xcrun","--sdk",platform,"--show-sdk-version")
-    if watch and int(sdk_version.split(".")[0]) < 27:
-        raise RuntimeError("watchOS 27 SDK required. No Watch artifact was produced.")
-    deployment = "27.0" if watch else "16.0"
-    triple = f"arm64-apple-{'watchos' if watch else 'ios'}{deployment}"
-    app = ROOT/"build"/("watch" if watch else "phone")/("WatchLinkWatch.app" if watch else "WatchLink.app")
-    if app.exists(): shutil.rmtree(app)
-    app.mkdir(parents=True)
-    obj = ROOT/"build"/(platform+"-Probe.o")
-    run("xcrun","--sdk",platform,"clang","-target",triple,"-isysroot",sdk,
-        "-fobjc-arc","-fmodules","-O2","-c",ROOT/"Native/Probe.m","-o",obj)
-    run("xcrun","--sdk",platform,"swiftc","-parse-as-library","-swift-version","5",
-        "-sdk",sdk,"-target",triple,"-O","-import-objc-header",ROOT/"Native/Probe.h",
-        ROOT/"App/Shared.swift",ROOT/("App/Watch.swift" if watch else "App/Phone.swift"),obj,
-        "-framework","SwiftUI","-framework","Foundation","-framework","WatchConnectivity",
-        "-framework","Security","-framework","CoreFoundation",
-        "-Xlinker","-rpath","-Xlinker","@executable_path/Frameworks","-o",app/"WatchLink")
-    info = {"CFBundleIdentifier":"dev.watchlink.companion.watchapp" if watch else "dev.watchlink.companion",
-        "CFBundleExecutable":"WatchLink","CFBundleName":"WatchLink","CFBundleDisplayName":"WatchLink",
-        "CFBundlePackageType":"APPL","CFBundleShortVersionString":version(),"CFBundleVersion":str(number),
-        "MinimumOSVersion":deployment,"CFBundleSupportedPlatforms":["WatchOS" if watch else "iPhoneOS"],
-        "CFBundleIconFiles":["AppIcon"],"DTPlatformName":platform,"DTSDKName":platform+sdk_version}
-    if watch:
-        info.update({"WKApplication":True,"WKWatchKitApp":True,"WKCompanionAppBundleIdentifier":"dev.watchlink.companion",
-            "WKRunsIndependentlyOfCompanionApp":True,"UIDeviceFamily":[4]})
-    else:
-        info.update({"UIDeviceFamily":[1,2],"LSRequiresIPhoneOS":True,
-            "UIApplicationSceneManifest":{"UIApplicationSupportsMultipleScenes":False},"UILaunchScreen":{},
-            "UISupportedInterfaceOrientations":["UIInterfaceOrientationPortrait"]})
-    (app/"Info.plist").write_bytes(plistlib.dumps(info))
-    frameworks=app/"Frameworks"
-    frameworks.mkdir()
-    run("xcrun","swift-stdlib-tool","--copy","--scan-executable",app/"WatchLink",
-        "--platform",platform,"--destination",frameworks)
-    for library in frameworks.glob("*.dylib"):
-        run("codesign","--force","--sign","-",library)
-    icon(app/"AppIcon.png",108 if watch else 120)
-    for name in ("THIRD_PARTY_NOTICES.md","CHANGELOG.md"): shutil.copy2(ROOT/name,app/name)
-    shutil.copytree(ROOT/"licenses",app/"licenses",dirs_exist_ok=True)
-    run("codesign","--force","--sign","-","--entitlements",ROOT/"packaging/sideload.entitlements",app)
-    return app
+def build_apps(number):
+    """Let Xcode produce bundle metadata and the companion copy phase."""
+    project_dir = ROOT / "build/xcode"
+    project_dir.mkdir(parents=True, exist_ok=True)
+    sdk_version = output("xcrun", "--sdk", "watchos", "--show-sdk-version")
+    if int(sdk_version.split(".")[0]) < 27:
+        raise RuntimeError("watchOS 27 SDK required.")
+    resources = {}
+    for platform in ("ios", "watchos"):
+        assets = project_dir / (platform + ".xcassets")
+        appicon = assets / "AppIcon.appiconset"
+        appicon.mkdir(parents=True, exist_ok=True)
+        (assets / "Contents.json").write_text(json.dumps({"info": {"author": "xcode", "version": 1}}))
+        (appicon / "Contents.json").write_text(json.dumps({"images": [{"filename": "AppIcon.png", "idiom": "universal", "platform": platform, "size": "1024x1024"}], "info": {"author": "xcode", "version": 1}}))
+        icon(appicon / "AppIcon.png", 1024)
+        resources[platform] = str(assets)
+    base = {"SWIFT_VERSION": "5.0", "MARKETING_VERSION": version(), "CURRENT_PROJECT_VERSION": str(number),
+            "GENERATE_INFOPLIST_FILE": "YES", "CODE_SIGNING_ALLOWED": "NO", "SUPPORTS_MACCATALYST": "NO",
+            "SWIFT_OBJC_BRIDGING_HEADER": str(ROOT / "Native/Probe.h"), "ASSETCATALOG_COMPILER_APPICON_NAME": "AppIcon"}
+    def target(watch):
+        name = "WatchLinkWatch" if watch else "WatchLink"
+        properties = {"CFBundleDisplayName": "WatchLink"}
+        if watch:
+            properties.update({"WKCompanionAppBundleIdentifier": "dev.watchlink.companion", "WKRunsIndependentlyOfCompanionApp": True})
+        else:
+            properties.update({"UILaunchScreen": {}, "UIApplicationSceneManifest": {"UIApplicationSupportsMultipleScenes": False}, "UISupportedInterfaceOrientations": ["UIInterfaceOrientationPortrait"]})
+        result = {"type": "application", "platform": "watchOS" if watch else "iOS",
+                  "sources": [str(ROOT / "App/Shared.swift"), str(ROOT / ("App/Watch.swift" if watch else "App/Phone.swift")), str(ROOT / "Native/Probe.m"), resources["watchos" if watch else "ios"]],
+                  "info": {"path": str(project_dir / (name + "-Info.plist")), "properties": properties},
+                  "settings": {"base": {**base, "PRODUCT_BUNDLE_IDENTIFIER": "dev.watchlink.companion.watchapp" if watch else "dev.watchlink.companion", "TARGETED_DEVICE_FAMILY": "4" if watch else "1,2"}}, "scheme": {}}
+        if not watch:
+            result["dependencies"] = [{"target": "WatchLinkWatch", "embed": True}]
+        return result
+    spec = {"name": "WatchLink", "options": {"deploymentTarget": {"iOS": "16.0", "watchOS": "27.0"}, "xcodeVersion": "27.0", "projectFormat": "xcode27_0"},
+            "targets": {"WatchLink": target(False), "WatchLinkWatch": target(True)}}
+    spec_path = project_dir / "project.json"
+    spec_path.write_text(json.dumps(spec, indent=2))
+    run("xcodegen", "generate", "--spec", spec_path, "--project", project_dir)
+    pbx = project_dir / "WatchLink.xcodeproj/project.pbxproj"
+    # Match the Xcode 27 companion layout already used by WristPane.
+    text = pbx.read_text()
+    text = text.replace('dstPath = "$(CONTENTS_FOLDER_PATH)/Watch";', 'dstPath = "";').replace('dstSubfolderSpec = 16;', 'dstSubfolderSpec = 13;')
+    pbx.write_text(text)
+    for scheme, platform in (("WatchLinkWatch", "watchOS"), ("WatchLink", "iOS")):
+        run("xcodebuild", "-project", project_dir / "WatchLink.xcodeproj", "-scheme", scheme, "-configuration", "Release",
+            "-destination", "generic/platform=" + platform, "-derivedDataPath", project_dir / "DerivedData", "CODE_SIGNING_ALLOWED=NO", "build")
+    products = project_dir / "DerivedData/Build/Products"
+    watch = ROOT / "build/watch/WatchLinkWatch.app"
+    phone = ROOT / "build/phone/WatchLink.app"
+    for source, app, is_watch in ((products / "Release-watchos/WatchLinkWatch.app", watch, True), (products / "Release-iphoneos/WatchLink.app", phone, False)):
+        if app.exists(): shutil.rmtree(app)
+        shutil.copytree(source, app)
+        icon(app / "AppIcon.png", 108 if is_watch else 120)
+        for name in ("THIRD_PARTY_NOTICES.md", "CHANGELOG.md"): shutil.copy2(ROOT / name, app / name)
+        shutil.copytree(ROOT / "licenses", app / "licenses", dirs_exist_ok=True)
+    embedded = phone / "PlugIns/WatchLinkWatch.app"
+    if not embedded.is_dir(): raise RuntimeError("Xcode did not embed the Watch app in PlugIns/.")
+    shutil.rmtree(embedded)
+    shutil.copytree(watch, embedded)
+    for app in (watch, embedded, phone):
+        for library in app.rglob("*.dylib"):
+            run("codesign", "--force", "--sign", "-", library)
+        run("codesign", "--force", "--sign", "-", "--entitlements", ROOT / "packaging/sideload.entitlements", app)
+    return watch, phone
 
 def ipa(app, destination):
     with zipfile.ZipFile(destination,"w",zipfile.ZIP_DEFLATED) as archive:
@@ -104,16 +124,19 @@ def main():
     if args.build_number<1: raise SystemExit("Build number must be positive.")
     dist=ROOT/"dist"
     dist.mkdir(exist_ok=True)
-    watch=build_app("watchos",args.build_number)
-    phone=build_app("iphoneos",args.build_number)
-    embedded=phone/"Watch"/watch.name
-    embedded.parent.mkdir(exist_ok=True)
-    shutil.copytree(watch,embedded,dirs_exist_ok=True)
-    run("codesign","--force","--sign","-","--entitlements",ROOT/"packaging/sideload.entitlements",phone)
+    watch, phone = build_apps(args.build_number)
     ipa(phone,dist/f"WatchLink-{version()}-unsigned.ipa")
     ipa(watch,dist/f"WatchLinkWatch-{version()}-unsigned.ipa")
+    phone_only = ROOT / "build/phone-only/WatchLink.app"
+    if phone_only.exists(): shutil.rmtree(phone_only)
+    shutil.copytree(phone, phone_only)
+    shutil.rmtree(phone_only / "PlugIns/WatchLinkWatch.app")
+    run("codesign", "--force", "--sign", "-", "--entitlements", ROOT / "packaging/sideload.entitlements", phone_only)
+    ipa(phone_only, dist/f"WatchLinkPhone-{version()}-unsigned.ipa")
     (dist/"build-info.json").write_text(json.dumps({"version":version(),"build":args.build_number,
         "xcode":output("xcodebuild","-version"),"watchSDK":output("xcrun","--sdk","watchos","--show-sdk-version"),
+        "iPhoneSDK":output("xcrun","--sdk","iphoneos","--show-sdk-version"),
+        "packaging":"xcodegen+xcodebuild", "watchBundleLayout":"PlugIns", "defaultAppGroups":False,
         "hardwareTested":False,"dualPairingImplemented":False},indent=2)+"\n")
     print("Native compilation complete. Hardware execution remains unverified.")
 
