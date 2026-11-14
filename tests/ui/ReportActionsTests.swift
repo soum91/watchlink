@@ -15,7 +15,7 @@ final class ReportActionsTests: XCTestCase {
         reveal("report.copy")
     }
     override func tearDownWithError() throws {
-        if testRun?.hasSucceeded == false, let app {
+        if (testRun?.failureCount ?? 0) > 0, let app {
             print("WATCHLINK_UI_FAILURE_HIERARCHY\n" + app.debugDescription)
         }
         app?.terminate(); app = nil
@@ -23,7 +23,7 @@ final class ReportActionsTests: XCTestCase {
     private func reveal(_ identifier: String) {
         let control = app.buttons[identifier]
         for _ in 0..<12 {
-            if control.isHittable { return }
+            if control.exists && control.isHittable { return }
             let start = app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.76))
             let end = app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.59))
             start.press(forDuration: 0.05, thenDragTo: end)
@@ -31,7 +31,11 @@ final class ReportActionsTests: XCTestCase {
         XCTAssertTrue(control.isHittable, "Report action must be reachable")
     }
     private func sheet(_ identifier: String) -> XCUIElement {
-        app.descendants(matching: .any).matching(identifier: identifier).firstMatch
+        // UIActivityViewController replaces its root view when the remote sheet loads.
+        let identifiers = identifier == "report.shareSheet"
+            ? [identifier, "ActivityListView", "ShareSheet.RemoteContainerView", "UIActivityContentView"]
+            : [identifier]
+        return app.descendants(matching: .any).matching(NSPredicate(format: "identifier IN %@", identifiers)).firstMatch
     }
     func testCopyDoesNotOpenShareOrSave() {
         app.buttons["report.copy"].tap()
@@ -49,7 +53,7 @@ final class ReportActionsTests: XCTestCase {
             XCTAssertTrue(sheet("report.exportSheet").waitForExistence(timeout: 15))
             XCTAssertFalse(sheet("report.shareSheet").exists)
             XCTAssertEqual(app.state, .runningForeground)
-            let cancel = app.buttons["Cancel"].firstMatch
+            let cancel = app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", "Cancel")).firstMatch
             XCTAssertTrue(cancel.waitForExistence(timeout: 10))
             cancel.tap()
             expectation(for: NSPredicate(format: "exists == false"), evaluatedWith: sheet("report.exportSheet"))
