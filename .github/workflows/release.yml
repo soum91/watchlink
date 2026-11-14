@@ -64,6 +64,11 @@ jobs:
           fi
       - name: Install packaging tools
         run: brew install ldid dpkg xcodegen
+      - name: Test bounded container discovery
+        run: |
+          mkdir -p build
+          xcrun clang -fobjc-arc -fmodules -framework Foundation -framework CoreFoundation -framework Security tests/native_probe_test.m -o build/native_probe_test
+          build/native_probe_test
       - name: Compile both apps
         run: python3 scripts/build.py --build-number '${{ github.run_number }}'
       - name: Package rootless companion

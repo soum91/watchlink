@@ -3,7 +3,7 @@
 Experimental pairing-access research for Apple Watch Series 10 on watchOS 27.2,
 an iOS 16 Dopamine iPhone, and a stock iPhone on iOS 27.0.1.
 
-**0.1.2 is an access probe. Dual pairing, phone switching, key preservation,
+**0.1.3 is an access probe. Dual pairing, phone switching, key preservation,
 pairing compatibility bypasses, and a Watch jailbreak are not implemented.**
 
 ## Included
@@ -134,3 +134,25 @@ a separate protocol and state-management problem.
 
 Nothing currently promises persistence through unpairing, erasure, transfer,
 app removal, reboot, or watchOS updates.
+
+## Multi-pairing access investigation (0.1.3)
+
+The normal scan now compares direct directory access, bounded container discovery,
+Mach service lookup reachability, and NanoRegistry class/selector availability.
+Container surveys visit at most 64 entries per target and read only bounded MCM
+container metadata. They identify known Apple component categories and check for
+registry/state storage underneath matched containers. UUIDs, filenames, actual
+container identifiers, pairing records and key material are never exported.
+
+Protected scanning additionally tests the existing MCM configuration and both
+worse_query query flag configurations. These are three modes of the same class-7
+App Group technique, not three independent vulnerabilities. Each lease is released
+and the dedicated cache restored before the next attempt. All protected modes
+require a legitimately provisioned App Group ending `.watchlink.probe`; a normal
+IPA without that group reports them as skipped. Worse_query's watchOS support
+is experimental and unverified. No entitlement is forged or added automatically.
+
+Service lookup sends no protocol messages. Framework inspection invokes no pairing
+methods. A reachable service or present method is not proof of authorization.
+These results identify candidate routes for further native pairing research; they
+do not implement concurrent companions or demonstrate preservation of pairing keys.

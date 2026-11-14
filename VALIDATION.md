@@ -63,3 +63,15 @@ Seven local distribution checks pass. Native build and archive verification must
 pass in CI before publication. No physical iPhone 17 installation result or
 device-side installation error has been collected; the root cause of the reported
 stall remains unconfirmed.
+
+## 0.1.3 multi-pairing access research
+
+The access configurations were compared with forcequitOS/worse_query upstream
+source before implementation. The existing journaled MCM wrapper is retained;
+only the query mode varies. These modes share one vulnerability family.
+
+Native macOS fixture checks exercise bounded discovery, known-component storage
+detection, non-export of container names/identifiers, refusal to follow metadata
+symlinks, and absent paths. Device access, service lookup authorization, protected
+mode behavior, and watchOS compatibility remain unverified until device reports
+are collected. No pairing APIs are invoked or pairing/keychain values changed.

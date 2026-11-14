@@ -9,6 +9,9 @@
 #import <stdlib.h>
 #import <sys/stat.h>
 #import <unistd.h>
+#import <dirent.h>
+#import <mach/mach.h>
+#import <objc/runtime.h>
 
 #if TARGET_OS_IOS
 NSString *DWCopyReport(NSString *text) {
@@ -72,12 +75,97 @@ static NSDictionary *Inspect(NSString *path) {
     struct stat info;
     if (lstat(path.fileSystemRepresentation, &info) != 0)
         return @{@"metadata": @NO, @"open": @NO, @"errno": @(errno)};
-    // No directory enumeration, file-content extraction, or system-symlink following.
+    // Metadata/open check only. Bounded directory/container-metadata survey is reported separately.
     int descriptor = open(path.fileSystemRepresentation, O_RDONLY | O_CLOEXEC | O_NOFOLLOW);
     int error = descriptor < 0 ? errno : 0;
     if (descriptor >= 0) close(descriptor);
     return @{@"metadata": @YES, @"directory": @(S_ISDIR(info.st_mode)),
         @"symlink": @(S_ISLNK(info.st_mode)), @"open": @(descriptor >= 0), @"errno": @(error)};
+}
+
+// Bound enumeration and export counts/known component labels, never filenames or identifiers.
+static NSDictionary *DirectorySurvey(NSString *path) {
+    int fd = open(path.fileSystemRepresentation, O_RDONLY | O_DIRECTORY | O_CLOEXEC | O_NOFOLLOW);
+    if (fd < 0) return @{ @"enumerated": @NO, @"errno": @(errno) };
+    DIR *dir = fdopendir(fd);
+    if (!dir) { int e=errno; close(fd); return @{ @"enumerated": @NO, @"errno": @(e) }; }
+    NSUInteger seen=0, folders=0, files=0, metadataRead=0;
+    NSMutableSet *components=[NSMutableSet set];
+    NSMutableDictionary *stores=[NSMutableDictionary dictionary];
+    NSArray *known=@[@"nanoregistry", @"networkrelay", @"identityservices", @"companion", @"rapport", @"pairedsync"];
+    struct dirent *entry;
+    BOOL capped=NO;
+    while ((entry=readdir(dir))) {
+        if (!strcmp(entry->d_name,".") || !strcmp(entry->d_name,"..")) continue;
+        if (seen++ >= 64) { capped=YES; break; }
+        struct stat st;
+        if (fstatat(dirfd(dir),entry->d_name,&st,AT_SYMLINK_NOFOLLOW)) continue;
+        if (S_ISREG(st.st_mode)) files++;
+        if (!S_ISDIR(st.st_mode)) continue;
+        folders++;
+        int child=openat(dirfd(dir),entry->d_name,O_RDONLY|O_DIRECTORY|O_CLOEXEC|O_NOFOLLOW);
+        if (child<0) continue;
+        int meta=openat(child,".com.apple.mobile_container_manager.metadata.plist",O_RDONLY|O_CLOEXEC|O_NOFOLLOW);
+        if (meta<0) { close(child); continue; }
+        if (!fstat(meta,&st) && S_ISREG(st.st_mode) && st.st_size>0 && st.st_size<=32768) {
+            NSMutableData *data=[NSMutableData dataWithLength:(NSUInteger)st.st_size];
+            ssize_t count=read(meta,data.mutableBytes,data.length);
+            if (count==(ssize_t)data.length) {
+                id plist=[NSPropertyListSerialization propertyListWithData:data options:NSPropertyListImmutable format:NULL error:nil];
+                if ([plist isKindOfClass:NSDictionary.class]) {
+                    id identifier=plist[@"MCMMetadataIdentifier"];
+                    if ([identifier isKindOfClass:NSString.class]) {
+                        metadataRead++;
+                        for (NSString *name in known)
+                            if ([(NSString *)identifier rangeOfString:name options:NSCaseInsensitiveSearch].location!=NSNotFound) {
+                                [components addObject:name];
+                                NSMutableDictionary *locations=[NSMutableDictionary dictionary];
+                                for (NSArray *location in @[@[@"registry",@"Library/DeviceRegistry"], @[@"state",@"Library/DeviceRegistry.state"], @[@"nanoRegistry",@"Library/NanoRegistry"], @[@"identityServices",@"Library/IdentityServices"]]) {
+                                    struct stat storage;
+                                    int rc=fstatat(child,[location[1] UTF8String],&storage,AT_SYMLINK_NOFOLLOW);
+                                    int code=rc==0 ? 0 : errno;
+                                    locations[location[0]]=@{@"metadata":@(rc==0),@"directory":@(rc==0 && S_ISDIR(storage.st_mode)),@"errno":@(code)};
+                                }
+                                if (!stores[name]) stores[name]=[NSMutableArray array];
+                                [stores[name] addObject:locations];
+                            }
+                    }
+                }
+            }
+        }
+        close(meta);
+        close(child);
+    }
+    closedir(dir);
+    return @{ @"enumerated": @YES, @"entryLimit": @64, @"limitReached": @(capped),
+              @"entriesVisited": @(MIN(seen,64)), @"directories": @(folders), @"regularFiles": @(files),
+              @"containerMetadataRead": @(metadataRead), @"knownComponentStorage": stores, @"knownComponents": [[components allObjects] sortedArrayUsingSelector:@selector(compare:)] };
+}
+
+static NSArray *ServiceSurvey(void) {
+    typedef int (*Lookup)(mach_port_t,const char *,mach_port_t *);
+    Lookup lookup=(Lookup)dlsym(RTLD_DEFAULT,"bootstrap_look_up");
+    mach_port_t *bootstrap=(mach_port_t *)dlsym(RTLD_DEFAULT,"bootstrap_port");
+    NSMutableArray *results=[NSMutableArray array];
+    for (NSString *name in @[@"com.apple.containermanagerd", @"com.apple.nanoregistryd", @"com.apple.networkrelay", @"com.apple.identityservicesd", @"com.apple.companiond", @"com.apple.mobile.lockdown"]) {
+        mach_port_t port=MACH_PORT_NULL;
+        int status=(lookup && bootstrap) ? lookup(*bootstrap,name.UTF8String,&port) : -1;
+        BOOL acquired=status==0 && port!=MACH_PORT_NULL;
+        if (port!=MACH_PORT_NULL) mach_port_deallocate(mach_task_self(),port);
+        [results addObject:@{@"service":name,@"lookupAvailable":@(lookup && bootstrap),@"status":@(status),@"portAcquired":@(acquired),@"messagesSent":@NO}];
+    }
+    return results;
+}
+
+static NSDictionary *RegistryAPISurvey(void) {
+    void *framework=dlopen("/System/Library/PrivateFrameworks/NanoRegistry.framework/NanoRegistry",RTLD_LAZY|RTLD_LOCAL);
+    Class registry=objc_getClass("NRPairedDeviceRegistry");
+    NSMutableDictionary *methods=[NSMutableDictionary dictionary];
+    for (NSString *name in @[@"sharedInstance", @"getPairedDevices", @"getDevices", @"getActivePairedDevice"])
+        methods[name]=@(registry && (class_getClassMethod(registry,NSSelectorFromString(name)) || class_getInstanceMethod(registry,NSSelectorFromString(name))));
+    NSDictionary *result=@{@"frameworkLoaded":@(framework!=NULL),@"registryClassPresent":@(registry!=Nil),@"selectorsPresent":methods,@"methodsInvoked":@NO};
+    // Keep an Objective-C framework loaded for process lifetime; unloading registered classes is unsafe.
+    return result;
 }
 
 static BOOL Restore(NSString *cache, NSString *backup, NSString *journal, NSString **error) {
@@ -113,7 +201,7 @@ static BOOL Restore(NSString *cache, NSString *backup, NSString *journal, NSStri
     return [fm removeItemAtPath:journal error:nil];
 }
 
-static NSDictionary *ProtectedInspect(NSString *path) {
+static NSDictionary *ProtectedInspect(NSString *path, uint64_t queryFlags, NSString *strategy) {
     NSFileManager *fm = NSFileManager.defaultManager;
     NSArray *groups = OwnGroups();
     if (!groups.count) return @{@"attempted": @NO, @"reason": @"Signature needs a valid dedicated App Group ending .watchlink.probe."};
@@ -158,7 +246,7 @@ static NSDictionary *ProtectedInspect(NSString *path) {
         dlclose(mcm); return @{@"attempted": @NO, @"reason": @"Required API symbols unavailable."};
     }
     NSString *target = [path.pathExtension isEqualToString:@"plist"] ? path.stringByDeletingLastPathComponent : path;
-    NSMutableDictionary *result = [@{@"attempted": @YES, @"extensionAcquired": @NO} mutableCopy];
+    NSMutableDictionary *result = [@{@"attempted": @YES, @"extensionAcquired": @NO, @"strategy": strategy, @"queryFlags": [NSString stringWithFormat:@"0x%llx",(unsigned long long)queryFlags]} mutableCopy];
     BOOL journalCreated = NO;
     int64_t handle = -1;
     @try {
@@ -175,7 +263,7 @@ static NSDictionary *ProtectedInspect(NSString *path) {
             if (query) {
                 void *identifier = string([groups.firstObject UTF8String]);
                 if (identifier) {
-                    setClass(query,7); setGroup(query,identifier); setPart(query,3); setFlags(query,0x8100000000ULL);
+                    setClass(query,7); setGroup(query,identifier); setPart(query,3); setFlags(query,queryFlags);
                     void *answer = get(query);
                     char *extension = answer ? token(answer) : NULL;
                     if (extension) { handle = consume(extension); free(extension); }
@@ -186,6 +274,7 @@ static NSDictionary *ProtectedInspect(NSString *path) {
             result[@"extensionAcquired"] = @(handle >= 0);
             result[@"extensionResult"] = @(handle);
             result[@"access"] = Inspect(path);
+            result[@"directorySurvey"] = DirectorySurvey(path);
         }
     } @catch (__unused NSException *exception) {
         result[@"reason"] = @"MCM operation raised an exception.";
@@ -207,13 +296,31 @@ NSString *DWRunProbe(BOOL protectedAccess) {
             @[@"Pairing state directory", @"/private/var/mobile/Library/DeviceRegistry.state"],
             @[@"NanoRegistry directory candidate", @"/private/var/mobile/Library/NanoRegistry"],
             @[@"NanoRegistry preferences candidate", @"/private/var/mobile/Library/Preferences/com.apple.NanoRegistry.plist"],
-            @[@"NetworkRelay preferences candidate", @"/private/var/mobile/Library/Preferences/com.apple.networkrelay.plist"]];
+            @[@"NetworkRelay preferences candidate", @"/private/var/mobile/Library/Preferences/com.apple.networkrelay.plist"],
+            @[@"Lockdown records location candidate", @"/private/var/root/Library/Lockdown"],
+            @[@"IdentityServices storage candidate", @"/private/var/mobile/Library/IdentityServices"],
+            @[@"PairedSync storage candidate", @"/private/var/mobile/Library/PairedSync"],
+            @[@"System data containers", @"/private/var/containers/Data/System"],
+            @[@"System group containers", @"/private/var/containers/Shared/SystemGroup"],
+            @[@"Internal daemon containers", @"/private/var/mobile/Containers/Data/InternalDaemon"],
+            @[@"Mobile shared group containers", @"/private/var/mobile/Containers/Shared/AppGroup"]];
         NSMutableArray *checks = [NSMutableArray array];
         for (NSArray *candidate in paths) {
             NSString *path = candidate[1];
             NSMutableDictionary *check = [@{@"label": candidate[0], @"normalAccess": Inspect(path)} mutableCopy];
+            check[@"normalDirectorySurvey"] = DirectorySurvey(path);
             if (protectedAccess) {
-                check[@"protectedProbe"] = ProtectedInspect(path);
+                NSMutableArray *attempts=[NSMutableArray array];
+                NSArray *modes=@[@{@"name":@"legacy-mcm",@"flags":@(0x8100000000ULL)},
+                                 @{@"name":@"worse-query-default",@"flags":@(0x8000000000ULL)},
+                                 @{@"name":@"worse-query-alternate",@"flags":@(0x800000000ULL)}];
+                for (NSDictionary *mode in modes) {
+                    NSDictionary *attempt=ProtectedInspect(path,[mode[@"flags"] unsignedLongLongValue],mode[@"name"]);
+                    [attempts addObject:@{@"strategy":mode[@"name"],@"result":attempt}];
+                    if ([attempt[@"cacheRestored"] isEqual:@NO]) break;
+                }
+                check[@"protectedProbes"] = attempts;
+                check[@"protectedProbe"] = [attempts.firstObject objectForKey:@"result"];
                 check[@"afterLeaseReleased"] = Inspect(path);
             }
             [checks addObject:check];
@@ -223,7 +330,7 @@ NSString *DWRunProbe(BOOL protectedAccess) {
             @"build": bundle[@"CFBundleVersion"] ?: @"?", @"platform": TARGET_OS_WATCH ? @"watchOS" : @"iOS",
             @"os": NSProcessInfo.processInfo.operatingSystemVersionString, @"uid": @(getuid()), @"euid": @(geteuid()),
             @"timestamp": @([[NSDate date] timeIntervalSince1970]), @"protectedProbeRequested": @(protectedAccess),
-            @"checks": checks, @"pairingChanged": @NO, @"keyMaterialRead": @NO, @"dualPairingImplemented": @NO,
+            @"checks": checks, @"researchSchema": @2, @"serviceSurvey": ServiceSurvey(), @"registryAPISurvey": RegistryAPISurvey(), @"watchOSQuerySupportVerified": @NO, @"containerIdentifiersExported": @NO, @"pairingChanged": @NO, @"keyMaterialRead": @NO, @"dualPairingImplemented": @NO,
             @"keyPreservationVerified": @NO, @"interpretation": @"File-open access does not prove keychain access, key preservation, protocol compatibility, or dual pairing."};
         NSData *json = [NSJSONSerialization dataWithJSONObject:report options:NSJSONWritingPrettyPrinted | NSJSONWritingSortedKeys error:nil];
         return json ? [[NSString alloc] initWithData:json encoding:NSUTF8StringEncoding] : @"Report serialization failed.";

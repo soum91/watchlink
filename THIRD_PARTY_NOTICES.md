@@ -18,3 +18,10 @@ Research references, not incorporated source:
 - https://support.apple.com/guide/security/secc7d85209d/web
 
 These projects do not endorse WatchLink or establish dual pairing support.
+
+The additional query configurations (0x8000000000 and 0x800000000) were
+verified against forcequitOS/worse_query:
+https://github.com/forcequitOS/worse_query/blob/main/worse_query/worse_query.m
+The upstream PoC is GPL-3.0-or-later. Its source is not bundled here; WatchLink
+uses the existing independently adapted, journaled MCM implementation with these
+API configuration values. Upstream destructive cache cleanup is not used.

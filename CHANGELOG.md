@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.3
+
+- Compare legacy MCM flags with worse_query default and alternate query modes using separate token, access, and restoration results.
+- Survey seven additional pairing/container candidates, with bounded enumeration and redacted known-component storage discovery.
+- Inspect pairing-related Mach service lookup reachability without sending messages.
+- Inspect NanoRegistry framework and selector availability without invoking pairing APIs.
+- Preserve default App Group-free installation; protected modes remain explicitly provisioned and experimental on watchOS.
+
 ## 0.1.2
 
 - Build iPhone and Watch apps through Xcode/XcodeGen instead of hand-writing installation metadata.
