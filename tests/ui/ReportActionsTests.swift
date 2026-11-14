@@ -55,7 +55,21 @@ final class ReportActionsTests: XCTestCase {
             XCTAssertEqual(app.state, .runningForeground)
             let cancel = app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", "Cancel")).firstMatch
             XCTAssertTrue(cancel.waitForExistence(timeout: 10))
-            cancel.tap()
+            // A freshly provisioned simulator may put the keyboard's first-use
+            // tutorial above Files. Dismiss only that identified system tutorial.
+            for _ in 0..<3 {
+                let tutorial = app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "Speed up your typing")).firstMatch
+                if tutorial.waitForExistence(timeout: 2) {
+                    let proceed = app.buttons["Continue"].firstMatch
+                    XCTAssertTrue(proceed.waitForExistence(timeout: 5))
+                    proceed.tap()
+                }
+                if !sheet("report.exportSheet").exists { break }
+                cancel.tap()
+                let dismissed = XCTNSPredicateExpectation(predicate: NSPredicate(format: "exists == false"),
+                                                         object: sheet("report.exportSheet"))
+                if XCTWaiter.wait(for: [dismissed], timeout: 3) == .completed { break }
+            }
             expectation(for: NSPredicate(format: "exists == false"), evaluatedWith: sheet("report.exportSheet"))
             waitForExpectations(timeout: 10)
         }
