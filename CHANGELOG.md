@@ -8,7 +8,8 @@
 - Catch clipboard and export-controller Objective-C exceptions and show usable errors.
 - Label reports as coming from iPhone or Watch and reopen the latest received report.
 - Add simulator UI regression checks for Copy, Save, Share, and repeated export actions.
-- Run iPhone UI checks on the stable simulator image with bounded setup commands; compile the Watch separately with Xcode 27.
+- Add bounded simulator checks through manual workflow dispatch; release builds require native compilation and real-artifact checks.
+- Handle system share-sheet accessibility and the simulator keyboard tutorial in UI tests. Record partial UI results and pending physical validation.
 
 ## 0.1.0
 

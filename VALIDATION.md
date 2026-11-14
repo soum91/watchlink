@@ -2,11 +2,11 @@
 
 ## 0.1.1 report-action regression coverage
 
-The release workflow now runs actual iOS simulator UI tests for independent Copy,
+Manual workflow dispatch runs actual iOS simulator UI tests for independent Copy,
 Save, and Share actions, document-picker cancellation, repeated Save, and continued
 foreground execution. Native clipboard/export creation is guarded against
-Objective-C exceptions, and export input is a saved JSON snapshot. CI success
-must be checked in the associated release run. Physical Dopamine iOS 16.1.1 and
+Objective-C exceptions, and export input is a saved JSON snapshot. CI results must be checked in the associated run; release publication is gated by
+native compilation and real-artifact checks, not a simulator pass. Physical Dopamine iOS 16.1.1 and
 watchOS behavior still require device verification.
 
 Preparation check on 2026-11-13: all six distribution tests passed. Python source
@@ -32,3 +32,16 @@ Hardware validation must cover normal/protected scan results, denied access,
 cache restoration and interrupted-operation recovery, report transfer, Copy,
 Share, Files export, and continued operation of the current pairing. Record app
 version/build and device model/build without exposing identifiers or secrets.
+
+Observed 0.1.1 results on 2026-11-14:
+
+- Native builds and real-artifact checks passed in runs 43538200017, 43539272166,
+  and 43540613238.
+- Copy and Share passed on iOS 26.4.1 in run 43539272166.
+- Save opened the document picker without terminating the app. Cancellation failed
+  with the simulator's first-use keyboard tutorial covering the controls.
+- Test-only handling for the identified tutorial was committed. Run 43540613238
+  subsequently stalled after simulator data-migration failure; no revised UI pass
+  is claimed.
+- Physical iOS 16.1.1 Copy/Save behavior and all Watch runtime behavior still need
+  verification. Multi-phone pairing is not implemented.

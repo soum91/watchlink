@@ -19,6 +19,7 @@ jobs:
           python-version: '3.12'
       - run: python3 -m unittest discover -s tests -v
   ui:
+    if: github.event_name == 'workflow_dispatch'
     needs: validate
     runs-on: macos-latest
     timeout-minutes: 20
@@ -37,6 +38,7 @@ jobs:
           if-no-files-found: ignore
           retention-days: 7
   native:
+    if: github.event_name == 'push'
     needs: validate
     runs-on: xcode-27
     timeout-minutes: 25
@@ -74,7 +76,7 @@ jobs:
           path: dist/
           if-no-files-found: error
   publish:
-    needs: [native, ui]
+    needs: native
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
