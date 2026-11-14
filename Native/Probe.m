@@ -127,7 +127,7 @@ static NSDictionary *DirectorySurvey(NSString *path) {
                                     locations[location[0]]=@{@"metadata":@(rc==0),@"directory":@(rc==0 && S_ISDIR(storage.st_mode)),@"errno":@(code)};
                                 }
                                 if (!stores[name]) stores[name]=[NSMutableArray array];
-                                [stores[name] addObject:locations];
+                                if ([stores[name] count]<1) [stores[name] addObject:locations];
                             }
                     }
                 }
@@ -152,7 +152,7 @@ static NSArray *ServiceSurvey(void) {
         int status=(lookup && bootstrap) ? lookup(*bootstrap,name.UTF8String,&port) : -1;
         BOOL acquired=status==0 && port!=MACH_PORT_NULL;
         if (port!=MACH_PORT_NULL) mach_port_deallocate(mach_task_self(),port);
-        [results addObject:@{@"service":name,@"lookupAvailable":@(lookup && bootstrap),@"status":@(status),@"portAcquired":@(acquired),@"messagesSent":@NO}];
+        [results addObject:@{@"service":name,@"lookupAvailable":@(lookup && bootstrap),@"status":@(status),@"portAcquired":@(acquired),@"serviceMessagesSent":@NO}];
     }
     return results;
 }
@@ -333,6 +333,24 @@ NSString *DWRunProbe(BOOL protectedAccess) {
             @"checks": checks, @"researchSchema": @2, @"serviceSurvey": ServiceSurvey(), @"registryAPISurvey": RegistryAPISurvey(), @"watchOSQuerySupportVerified": @NO, @"containerIdentifiersExported": @NO, @"pairingChanged": @NO, @"keyMaterialRead": @NO, @"dualPairingImplemented": @NO,
             @"keyPreservationVerified": @NO, @"interpretation": @"File-open access does not prove keychain access, key preservation, protocol compatibility, or dual pairing."};
         NSData *json = [NSJSONSerialization dataWithJSONObject:report options:NSJSONWritingPrettyPrinted | NSJSONWritingSortedKeys error:nil];
+        if (json.length > 120 * 1024) {
+            for (NSMutableDictionary *check in checks) {
+                NSMutableDictionary *normal=[check[@"normalDirectorySurvey"] mutableCopy];
+                [normal removeObjectForKey:@"knownComponentStorage"];
+                normal[@"storageDetailsTruncated"]=@YES;
+                check[@"normalDirectorySurvey"]=normal;
+                for (NSDictionary *wrapper in check[@"protectedProbes"]) {
+                    NSMutableDictionary *attempt=wrapper[@"result"];
+                    if (attempt[@"directorySurvey"]) {
+                        NSMutableDictionary *survey=[attempt[@"directorySurvey"] mutableCopy];
+                        [survey removeObjectForKey:@"knownComponentStorage"];
+                        survey[@"storageDetailsTruncated"]=@YES;
+                        attempt[@"directorySurvey"]=survey;
+                    }
+                }
+            }
+            json=[NSJSONSerialization dataWithJSONObject:report options:NSJSONWritingSortedKeys error:nil];
+        }
         return json ? [[NSString alloc] initWithData:json encoding:NSUTF8StringEncoding] : @"Report serialization failed.";
     }
 }
