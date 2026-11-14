@@ -8,6 +8,7 @@
 - Catch clipboard and export-controller Objective-C exceptions and show usable errors.
 - Label reports as coming from iPhone or Watch and reopen the latest received report.
 - Add simulator UI regression checks for Copy, Save, Share, and repeated export actions.
+- Run iPhone UI checks on the stable simulator image with bounded setup commands; compile the Watch separately with Xcode 27.
 
 ## 0.1.0
 

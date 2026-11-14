@@ -10,8 +10,8 @@ final class ReportActionsTests: XCTestCase {
         let scan = app.buttons["scan.run"]
         XCTAssertTrue(scan.waitForExistence(timeout: 15))
         scan.tap()
-        let payload = app.staticTexts["report.payload"]
-        XCTAssertTrue(payload.waitForExistence(timeout: 10))
+        let saved = app.staticTexts["Report saved. No pairing changes made."].firstMatch
+        XCTAssertTrue(saved.waitForExistence(timeout: 10))
         reveal("report.copy")
     }
     override func tearDownWithError() throws { app?.terminate(); app = nil }

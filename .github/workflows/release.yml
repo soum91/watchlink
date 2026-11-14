@@ -8,7 +8,7 @@ permissions:
   contents: write
 concurrency:
   group: watchlink-release
-  cancel-in-progress: false
+  cancel-in-progress: true
 jobs:
   validate:
     runs-on: ubuntu-latest
@@ -18,8 +18,26 @@ jobs:
         with:
           python-version: '3.12'
       - run: python3 -m unittest discover -s tests -v
-  native:
+  ui:
     needs: validate
+    runs-on: macos-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install UI project generator
+        run: brew install xcodegen
+      - name: Exercise Copy, Save, and Share in iOS simulator
+        run: python3 scripts/ui_smoke.py
+      - name: Retain UI test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: WatchLink-report-ui-tests
+          path: build/ui/ReportActions.xcresult
+          if-no-files-found: ignore
+          retention-days: 7
+  native:
+    needs: [validate, ui]
     runs-on: xcode-27
     timeout-minutes: 25
     steps:
@@ -43,17 +61,7 @@ jobs:
             exit 1
           fi
       - name: Install packaging tools
-        run: brew install ldid dpkg xcodegen
-      - name: Exercise Copy, Save, and Share in iOS simulator
-        run: python3 scripts/ui_smoke.py
-      - name: Retain UI test results
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: WatchLink-report-ui-tests
-          path: build/ui/ReportActions.xcresult
-          if-no-files-found: ignore
-          retention-days: 7
+        run: brew install ldid dpkg
       - name: Compile both apps
         run: python3 scripts/build.py --build-number '${{ github.run_number }}'
       - name: Package rootless companion

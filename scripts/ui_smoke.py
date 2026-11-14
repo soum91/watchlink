@@ -7,7 +7,7 @@ import sys
 from build import ROOT
 
 def output(*args):
-    return subprocess.check_output([str(a) for a in args], text=True)
+    return subprocess.check_output([str(a) for a in args], text=True, timeout=120)
 
 def main():
     if sys.platform != "darwin": raise SystemExit("Simulator UI checks require macOS/Xcode.")
@@ -41,7 +41,7 @@ def main():
     }
     project = directory / "project.json"
     project.write_text(json.dumps(spec, indent=2))
-    subprocess.run(["xcodegen", "generate", "--spec", str(project), "--project", str(directory)], check=True)
+    subprocess.run(["xcodegen", "generate", "--spec", str(project), "--project", str(directory)], check=True, timeout=90)
     devices = json.loads(output("xcrun", "simctl", "list", "devices", "available", "--json"))["devices"]
     eligible = [d for runtime, group in devices.items() if ".iOS-" in runtime for d in group
                 if d.get("isAvailable") and d["name"].startswith("iPhone")]
@@ -49,12 +49,12 @@ def main():
     selected = sorted(eligible, key=lambda d: (d["state"] == "Booted", d["name"]), reverse=True)[0]
     identifier = selected["udid"]
     if selected["state"] != "Booted":
-        subprocess.run(["xcrun", "simctl", "boot", identifier], check=True)
-    subprocess.run(["xcrun", "simctl", "bootstatus", identifier, "-b"], check=True, timeout=240)
+        subprocess.run(["xcrun", "simctl", "boot", identifier], check=True, timeout=120)
+    subprocess.run(["xcrun", "simctl", "bootstatus", identifier, "-b"], check=True, timeout=180)
     command = ["xcodebuild", "test", "-project", str(directory / "WatchLinkSmoke.xcodeproj"),
         "-scheme", "WatchLinkSmoke", "-destination", "platform=iOS Simulator,id=" + identifier,
         "-derivedDataPath", str(directory / "DerivedData"), "-resultBundlePath", str(directory / "ReportActions.xcresult"),
         "-parallel-testing-enabled", "NO", "CODE_SIGNING_ALLOWED=NO"]
-    subprocess.run(command, check=True, timeout=600)
+    subprocess.run(command, check=True, timeout=360)
 
 if __name__ == "__main__": main()
