@@ -13,9 +13,11 @@ Preparation check on 2026-11-13: all six distribution tests passed. Python sourc
 compilation and shell syntax validation passed. Native build and Debian packaging
 correctly refused to generate artifacts without macOS/Xcode and a real executable.
 
-The source preparation environment has no iOS/watchOS SDK. Native compilation
-has not been performed. No device has executed the app; all runtime behavior is
-unverified.
+The local source preparation environment has no iOS/watchOS SDK. Release 0.1.0
+compiled and passed real-artifact checks on GitHub Actions run 43515623611.
+For 0.1.1, simulator compilation passed in run 43536962906, but the cold build
+exceeded its time limit before UI execution; this does not count as a UI pass.
+No physical-device runtime result is verified by the build workflow.
 
 Distribution tests cover empty repository rejection, incorrect architecture,
 unsupported versions, malformed Mach-O commands, phone/Watch platform metadata,

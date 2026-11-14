@@ -55,6 +55,6 @@ def main():
         "-scheme", "WatchLinkSmoke", "-destination", "platform=iOS Simulator,id=" + identifier,
         "-derivedDataPath", str(directory / "DerivedData"), "-resultBundlePath", str(directory / "ReportActions.xcresult"),
         "-parallel-testing-enabled", "NO", "CODE_SIGNING_ALLOWED=NO"]
-    subprocess.run(command, check=True, timeout=360)
+    subprocess.run(command, check=True, timeout=900)
 
 if __name__ == "__main__": main()

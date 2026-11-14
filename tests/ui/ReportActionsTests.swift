@@ -14,7 +14,12 @@ final class ReportActionsTests: XCTestCase {
         XCTAssertTrue(saved.waitForExistence(timeout: 10))
         reveal("report.copy")
     }
-    override func tearDownWithError() throws { app?.terminate(); app = nil }
+    override func tearDownWithError() throws {
+        if testRun?.hasSucceeded == false, let app {
+            print("WATCHLINK_UI_FAILURE_HIERARCHY\n" + app.debugDescription)
+        }
+        app?.terminate(); app = nil
+    }
     private func reveal(_ identifier: String) {
         let control = app.buttons[identifier]
         for _ in 0..<12 {

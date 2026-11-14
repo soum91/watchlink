@@ -21,7 +21,7 @@ jobs:
   ui:
     needs: validate
     runs-on: macos-latest
-    timeout-minutes: 12
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
       - name: Install UI project generator
@@ -37,7 +37,7 @@ jobs:
           if-no-files-found: ignore
           retention-days: 7
   native:
-    needs: [validate, ui]
+    needs: validate
     runs-on: xcode-27
     timeout-minutes: 25
     steps:
@@ -74,7 +74,7 @@ jobs:
           path: dist/
           if-no-files-found: error
   publish:
-    needs: native
+    needs: [native, ui]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
