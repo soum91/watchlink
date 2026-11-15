@@ -3,7 +3,7 @@
 Experimental pairing-access research for Apple Watch Series 10 on watchOS 27.2,
 an iOS 16 Dopamine iPhone, and a stock iPhone on iOS 27.0.1.
 
-**0.1.4 is an access probe. Dual pairing, phone switching, key preservation,
+**0.1.5 is an access probe. Dual pairing, phone switching, key preservation,
 pairing compatibility bypasses, and a Watch jailbreak are not implemented.**
 
 ## Included
@@ -172,3 +172,20 @@ Watch. Clipboard-style Copy is not implemented on watchOS. Transfers expose
 session state and error domain/code. File transport completion is distinguished
 from acknowledgement that the receiver validated and saved the report. Paired
 physical devices are required to validate these transports.
+
+## Direct Wi-Fi report fallback
+
+If the iPhone reports `Watch app installed=false`, Watch Connectivity cannot
+currently identify the installed companion. The precise installation/signing
+registration cause needs device-side evidence; repeatedly sending through the
+same session does not repair it.
+
+In the iPhone app choose **Start Wi-Fi receiver**. On Watch choose **Wi-Fi report
+transfer**, enter the iPhone's six-digit code, tap **Find iPhone receiver** and
+choose the matching receiver name. Allow Local Network permission on both and
+keep both apps open on the same Wi-Fi. This path uses Bonjour plus a bounded TCP
+report frame; it does not require Watch Connectivity association. The receiver
+expires after 120 seconds, permits at most two concurrent/eight total connection
+attempts, and stops after three incorrect codes. It accepts only bounded, validated
+WatchLink JSON and acknowledges successful local persistence. There is no cloud
+server or background upload. Physical discovery and transfer remain unverified.

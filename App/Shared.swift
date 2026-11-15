@@ -10,6 +10,7 @@ final class WatchLinkModel: NSObject, ObservableObject, WCSessionDelegate {
     @Published var running = false
     @Published var status = "Ready. Pairing state is unchanged."
     @Published var protectedAccess = false
+    let localLink = LocalReportLink()
     private let worker = DispatchQueue(label: "dev.watchlink.probe")
     private var session: WCSession?
     static var reportURL: URL {
@@ -35,6 +36,10 @@ final class WatchLinkModel: NSObject, ObservableObject, WCSessionDelegate {
         report = candidates.lazy.compactMap { try? String(contentsOf: $0, encoding: .utf8) }.first
             ?? "Run a scan to create a report."
         super.init()
+        localLink.onReport = { [weak self] data in
+            guard let self else { throw CocoaError(.fileWriteUnknown) }
+            try self.receive(data, channel: "local Wi-Fi")
+        }
         if hasReport { try? report.write(to: Self.textReportURL, atomically: true, encoding: .utf8) }
         if WCSession.isSupported() {
             session = WCSession.default
@@ -141,6 +146,10 @@ final class WatchLinkModel: NSObject, ObservableObject, WCSessionDelegate {
                 DispatchQueue.main.async { self.status=(reply["reason"] as? String) ?? "Watch queued its report. Waiting for delivery." }
             }
         },errorHandler:{ self.failure("Request",$0) })
+    }
+    func sendLocalReport(to receiver: LocalReportLink.Receiver) {
+        do { localLink.send(try Self.validatedData(Data(contentsOf: Self.reportURL)), to: receiver) }
+        catch { localLink.status="Run a scan on this Watch first; no saved report is available." }
     }
     func sendReport() {
         refreshConnection()

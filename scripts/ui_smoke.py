@@ -20,7 +20,7 @@ def main():
         "targets": {
             "WatchLinkSmoke": {
                 "type": "application", "platform": "iOS",
-                "sources": [str(ROOT / p) for p in ("App/Phone.swift", "App/Shared.swift", "Native/Probe.m")],
+                "sources": [str(ROOT / p) for p in ("App/Phone.swift", "App/Shared.swift", "App/LocalReportLink.swift", "Native/Probe.m")],
                 "info": {"path": str(directory / "PhoneInfo.plist"), "properties": {
                     "CFBundleDisplayName": "WatchLink", "CFBundleShortVersionString": (ROOT / "VERSION").read_text().strip(),
                     "CFBundleVersion": "1", "UILaunchScreen": {},

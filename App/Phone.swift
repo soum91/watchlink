@@ -27,6 +27,9 @@ import UIKit
                         Text("Install the signed Watch app on the currently paired Watch. Run its scan, then tap Send report. Sileo installs the iPhone companion only.").font(.footnote)
                         Text("Phone switching and a second native pairing are not implemented.").font(.footnote).foregroundStyle(.orange)
                     }
+                    Section("Direct Watch report transfer") {
+                        LocalReceiverView(link: model.localLink)
+                    }
                     Section("Report") {
                         Text(model.reportSource).font(.footnote.bold()).accessibilityIdentifier("report.origin")
                         HStack {
@@ -152,5 +155,21 @@ struct ReportExporter: UIViewControllerRepresentable {
             finish(urls.isEmpty ? "No export destination selected." : "Report exported.")
         }
         func documentPickerWasCancelled(_ controller: UIDocumentPickerViewController) { finish("Export cancelled.") }
+    }
+}
+
+struct LocalReceiverView: View {
+    @ObservedObject var link: LocalReportLink
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Button("Start Wi-Fi receiver") { link.startReceiving() }
+            if link.receiving {
+                Text(link.receiverName).font(.caption.monospaced())
+                Text("Code: " + link.receiverCode).font(.title2.monospaced())
+                Button("Stop receiver") { link.stopReceiving() }
+            }
+            Text(link.status).font(.footnote)
+            Text("On Watch: Wi-Fi report transfer → Find iPhone receiver. Enter this code and choose the matching name. Keep both apps open on the same Wi-Fi. Allow Local Network access.").font(.footnote)
+        }
     }
 }

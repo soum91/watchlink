@@ -1,7 +1,7 @@
-WatchLink 0.1.4 repairs report retrieval paths.
+WatchLink 0.1.5 adds a direct local Wi-Fi report transfer.
 
-The iPhone app now has Get Watch report. Open WatchLink on the Watch and request its saved report from the paired iPhone. Watch Send report attempts immediate messaging and background application context as well as an immutable file snapshot. Receipt acknowledgement follows validation and local persistence. Connection state and error domain/code replace the generic failure alone.
+The supplied screenshot shows activation=2, paired=true, but Watch app installed=false. Watch Connectivity does not currently associate the installed apps. The precise registration/signing cause remains unconfirmed.
 
-The Watch also offers native Share report text, Share report file (.txt), and a compact readable summary. watchOS has no iPhone-style clipboard button here; share to an available service and copy on the phone. Physical transport and sharing require device verification.
+On iPhone start Wi-Fi receiver. On Watch open Wi-Fi report transfer, enter the displayed 6-digit code, find the receiver and choose its matching name. Both devices must be on the same local Wi-Fi with Local Network permission and both apps open. The receiver expires after two minutes and acknowledges only after validating and saving the report. No Internet service or automatic upload is used.
 
-The supplied 0.1.3 report was from iOS 27.2, with protected modes skipped for missing App Group provisioning and sandbox-denied file access. It was not the Watch report. Multi-phone pairing remains unimplemented.
+This bypasses Watch Connectivity for report delivery; it does not fix Apple's app association or implement multi-phone pairing. Physical local-network discovery and delivery remain unverified.

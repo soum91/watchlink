@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.5
+
+- Add user-started local Wi-Fi report transfer independent of Watch Connectivity association.
+- Discover the iPhone receiver through Bonjour and require its short-lived 6-digit code before importing a report.
+- Bound receiver lifetime, attempts, concurrent connections and report/frame sizes; acknowledge only after validation and persistence.
+- Keep normal Watch Connectivity transfer and native sharing as alternatives.
+
 ## 0.1.4
 
 - Let the iPhone request the saved Watch report directly while both apps are open.

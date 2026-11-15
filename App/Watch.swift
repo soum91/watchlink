@@ -27,12 +27,34 @@ import SwiftUI
                         NavigationLink("Compact summary") {
                             ScrollView { Text(model.compactSummary).font(.system(size: 11, design: .monospaced)).padding() }
                         }
+                        NavigationLink("Wi-Fi report transfer") {
+                            LocalWatchSender(link: model.localLink, model: model)
+                        }
                         NavigationLink("Read report") {
                             ScrollView { Text(model.report).font(.system(size: 10, design: .monospaced)).padding() }
                         }
                     }.padding()
                 }
             }.tint(.cyan)
+        }
+    }
+}
+
+struct LocalWatchSender: View {
+    @ObservedObject var link: LocalReportLink
+    @ObservedObject var model: WatchLinkModel
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 10) {
+                Text("Start Wi-Fi receiver in the iPhone app first.").font(.caption2)
+                TextField("6-digit iPhone code", text: $link.enteredCode)
+                Button("Find iPhone receiver") { link.findReceivers() }
+                ForEach(link.receivers) { receiver in
+                    Button("Send to " + receiver.id) { model.sendLocalReport(to: receiver) }
+                }
+                Text(link.status).font(.caption2)
+                Button("Stop searching") { link.stopSearching() }
+            }.padding()
         }
     }
 }

@@ -87,3 +87,13 @@ background application context, immutable queued file snapshots, validation befo
 persistence and receipt acknowledgement. A native watchOS Share sheet provides
 an independent export route. Native compilation covers API availability, but
 physical phone/Watch delivery, sharing and cross-app copy remain unverified.
+
+## 0.1.5 direct report channel
+
+The iPhone screenshot confirms WCSession activation=2 and paired=true, but
+isWatchAppInstalled=false. That is direct evidence of an app association failure;
+it does not identify which signer or registration action caused it. EmberSign
+source was inspected without modifying its signing engine on an unproven theory.
+The new explicit Wi-Fi channel avoids that dependency for report delivery only.
+Compilation/package checks cannot prove physical Bonjour discovery, local network
+permissions, router reachability, or TCP delivery. Those remain device checks.
