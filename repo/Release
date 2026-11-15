@@ -5,10 +5,10 @@ Codename: watchlink
 Architectures: iphoneos-arm64
 Components: main
 Description: Experimental pairing access probe
-Date: Sun, 15 Nov 2026 00:18:45 +0000
+Date: Sun, 15 Nov 2026 00:35:51 +0000
 MD5Sum:
- 9b8127a5ef8d2422d8538d630f0e2e7e             2956 Packages
- 1813bafd4000be21be5a61645da834d4              731 Packages.gz
+ c6ac358ebcc418dc862868aea898bb16             3548 Packages
+ 759a336e37a2db44495a9cd72757ec4a              810 Packages.gz
 SHA256:
- e2e6414a2dd637d07b6dbd41d4448e0622039f6230221f5ee97b8052e6e7c666             2956 Packages
- c1e9f5e2d97b809442d6581f14cc99a5565c5ba11c1b300df3b3e06d8971c408              731 Packages.gz
+ c8ad20b09199c48589fe4aa86cff371e52521d57967580f001d89f0e24fca16e             3548 Packages
+ 854d7f8e58cf11f76065b7a586090ddcb847faf1a28ece65e8e349697f8483f4              810 Packages.gz
