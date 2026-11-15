@@ -87,6 +87,12 @@ import Network
         httpClient.sendHTTP(Data("invalid JSON".utf8))
         wait { httpClient.status.contains("rejected HTTP report (status 400)") }
         require(received.count==3,"HTTP rejected import must not persist")
+        httpClient.enteredAddress="10.0.0.1.example.com:\(port.rawValue)"
+        httpClient.sendHTTP(payload)
+        require(httpClient.status.contains("private IPv4"),"reject DNS names disguised as private IPv4")
+        httpClient.enteredAddress="010.0.0.1:\(port.rawValue)"
+        httpClient.sendHTTP(payload)
+        require(httpClient.status.contains("private IPv4"),"reject noncanonical/octal address")
         server.stopReceiving()
         print("Real TCP tests passed: 65KB report, wrong PIN, rejected import, fragmented header/body, URLSession HTTP, HTTP rejection and acknowledged receipt.")
     }

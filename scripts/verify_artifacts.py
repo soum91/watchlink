@@ -49,6 +49,10 @@ def verify_app(app,platform,identifier):
     if int(info.get("CFBundleVersion","0"))<1: raise ValueError("Build number missing")
     if executable_platform((app/info["CFBundleExecutable"]).read_bytes())!=platform: raise ValueError("Mach-O platform mismatch")
     if not (app/"AppIcon.png").is_file(): raise ValueError("Icon missing")
+    if platform == 4:
+        ats=info.get("NSAppTransportSecurity",{})
+        if not ats.get("NSAllowsArbitraryLoads") or "NSAllowsLocalNetworking" in ats:
+            raise ValueError("Watch HTTP numeric-IP ATS settings missing or overridden")
 
 def main():
     dist=ROOT/"dist"

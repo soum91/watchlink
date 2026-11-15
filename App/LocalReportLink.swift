@@ -185,8 +185,13 @@ final class LocalReportLink: ObservableObject {
         #endif
     }
     private static func privateAddress(_ host: String) -> Bool {
-        let parts=host.split(separator:".").compactMap { Int($0) }
-        guard parts.count==4, parts.allSatisfy({ (0...255).contains($0) }) else { return false }
+        let segments=host.split(separator:".",omittingEmptySubsequences:false)
+        guard segments.count==4 else { return false }
+        var parts: [Int]=[]
+        for segment in segments {
+            guard let value=Int(segment), (0...255).contains(value), String(value)==String(segment) else { return false }
+            parts.append(value)
+        }
         #if WATCHLINK_TRANSPORT_TESTS
         if parts[0]==127 { return true }
         #endif
