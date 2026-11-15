@@ -19,6 +19,15 @@
       "localizedDescription": "Pairing-storage access research probe with an embedded Apple Watch companion. Multi-phone pairing is not implemented. iOS 16+ and watchOS 27+; use a Watch-aware signer such as EmberSign to sign/install the Watch companion. Protected access requires a provisioned dedicated App Group.",
       "versions": [
         {
+          "version": "0.1.4",
+          "buildVersion": "14",
+          "date": "2026-11-15",
+          "localizedDescription": "Pairing-storage access research probe with an embedded Apple Watch companion. Multi-phone pairing is not implemented. iOS 16+ and watchOS 27+; use a Watch-aware signer such as EmberSign to sign/install the Watch companion. Protected access requires a provisioned dedicated App Group.",
+          "downloadURL": "https://github.com/soum91/watchlink/releases/download/v0.1.4/WatchLink-0.1.4-unsigned.ipa",
+          "size": 240883,
+          "minOSVersion": "16.0"
+        },
+        {
           "version": "0.1.3",
           "buildVersion": "12",
           "date": "2026-11-14",
@@ -46,11 +55,11 @@
           "minOSVersion": "16.0"
         }
       ],
-      "version": "0.1.3",
-      "versionDate": "2026-11-14",
+      "version": "0.1.4",
+      "versionDate": "2026-11-15",
       "versionDescription": "Pairing-storage access research probe with an embedded Apple Watch companion. Multi-phone pairing is not implemented. iOS 16+ and watchOS 27+; use a Watch-aware signer such as EmberSign to sign/install the Watch companion. Protected access requires a provisioned dedicated App Group.",
-      "downloadURL": "https://github.com/soum91/watchlink/releases/download/v0.1.3/WatchLink-0.1.3-unsigned.ipa",
-      "size": 204448,
+      "downloadURL": "https://github.com/soum91/watchlink/releases/download/v0.1.4/WatchLink-0.1.4-unsigned.ipa",
+      "size": 240883,
       "minOSVersion": "16.0"
     }
   ],
