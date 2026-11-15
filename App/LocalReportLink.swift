@@ -57,6 +57,11 @@ final class LocalReportLink: ObservableObject {
         if let previousIdleTimer { UIApplication.shared.isIdleTimerDisabled=previousIdleTimer; self.previousIdleTimer=nil }
         #endif
     }
+    // Repeated Get report taps must not invalidate a code already entered on Watch.
+    func ensureReceiving() {
+        guard listener == nil else { return }
+        startReceiving()
+    }
     func startReceiving() {
         stopReceiving()
         #if os(iOS)

@@ -22,14 +22,15 @@ import UIKit
                     }
                     Section("Watch") {
                         Button("Get Watch report") { model.requestWatchReport() }
+                        LocalReceiverView(link: model.localLink)
+                        if !model.lastWatchReceipt.isEmpty {
+                            Text(model.lastWatchReceipt).font(.footnote).foregroundStyle(.green)
+                        }
                         Button("Show saved Watch report") { model.showReceivedWatchReport() }
                         Button("Check companion connection") { model.refreshConnection() }
                         Text(model.transferDetails).font(.footnote).textSelection(.enabled)
-                        Text("Install the signed Watch app on the currently paired Watch. Run its scan, then tap Send report. Sileo installs the iPhone companion only.").font(.footnote)
+                        Text("Run a scan in WatchLink on Watch, then tap Send report. When the companion connection is unavailable, use the Wi-Fi address and code above.").font(.footnote)
                         Text("Phone switching and a second native pairing are not implemented.").font(.footnote).foregroundStyle(.orange)
-                    }
-                    Section("Direct Watch report transfer") {
-                        LocalReceiverView(link: model.localLink)
                     }
                     Section("Report") {
                         Text(model.reportSource).font(.footnote.bold()).accessibilityIdentifier("report.origin")
@@ -164,14 +165,16 @@ struct LocalReceiverView: View {
     @ObservedObject var link: LocalReportLink
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Button("Start Wi-Fi receiver") { link.startReceiving() }
+            if !link.receiving {
+                Button("Start Wi-Fi receiver") { link.ensureReceiving() }
+            }
             if link.receiving {
                 Text("Address: " + link.receiverAddress).font(.body.monospaced()).textSelection(.enabled)
                 Text("Code: " + link.receiverCode).font(.title2.monospaced())
                 Button("Stop receiver") { link.stopReceiving() }
             }
             Text(link.status).font(.footnote)
-            Text("On Watch: Wi-Fi report transfer → enter this address and code → Send report over HTTP. Keep both apps open on the same Wi-Fi. Allow Local Network access.").font(.footnote)
-        }
+            Text("On Watch: Send report → enter this address and code → Send report over HTTP. Keep both apps open on the same Wi-Fi. Allow Local Network access.").font(.footnote)
+        }.buttonStyle(.borderless)
     }
 }

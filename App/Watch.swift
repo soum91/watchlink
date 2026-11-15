@@ -20,7 +20,7 @@ import SwiftUI
                         ShareLink(item: WatchLinkModel.textReportURL) {
                             Label("Share report file", systemImage: "doc")
                         }.disabled(!model.hasReport || model.running)
-                        Text("For copy: share to Messages, then copy on iPhone. Or use Get Watch report in the iPhone app.").font(.caption2)
+                        Text("On iPhone, tap Get Watch report. If the companion connection is unavailable, Send report opens the Wi-Fi transfer form.").font(.caption2)
                         Button("Check connection") { model.refreshConnection() }
                         Text(model.status).font(.caption2)
                         Text(model.transferDetails).font(.caption2)
@@ -35,6 +35,9 @@ import SwiftUI
                         }
                     }.padding()
                 }
+            }
+            .sheet(isPresented: $model.showDirectSender) {
+                LocalWatchSender(link: model.localLink, model: model)
             }.tint(.cyan)
         }
     }

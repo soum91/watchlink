@@ -10,6 +10,9 @@ final class WatchLinkModel: NSObject, ObservableObject, WCSessionDelegate {
     @Published var running = false
     @Published var status = "Ready. Pairing state is unchanged."
     @Published var protectedAccess = false
+    @Published var showDirectSender = false
+    @Published var lastWatchReceipt = ""
+    private var reportRequestID: UUID?
     let localLink = LocalReportLink()
     private let worker = DispatchQueue(label: "dev.watchlink.probe")
     private var session: WCSession?
@@ -110,7 +113,10 @@ final class WatchLinkModel: NSObject, ObservableObject, WCSessionDelegate {
         DispatchQueue.main.async {
             self.transferDetails="\(channel): \(e.domain) / \(e.code). " + (self.session.map(self.connectionState) ?? "No session")
             if !self.status.hasPrefix("iPhone received") && !self.status.hasPrefix("Received companion") {
-                self.status="\(channel) failed: \(e.domain)/\(e.code). Keep both WatchLink apps open, then retry Get Watch report or use Share on Watch."
+                self.status="\(channel) failed: \(e.domain)/\(e.code). Use the Wi-Fi report transfer."
+                #if os(watchOS)
+                self.showDirectSender=true
+                #endif
             }
         }
     }
@@ -124,7 +130,9 @@ final class WatchLinkModel: NSObject, ObservableObject, WCSessionDelegate {
         try checked.write(to:Self.receivedReportURL,options:.atomic)
         guard let text=String(data:checked,encoding:.utf8) else { throw CocoaError(.fileReadInapplicableStringEncoding) }
         DispatchQueue.main.async {
+            self.reportRequestID=nil
             self.report=text
+            self.lastWatchReceipt="Watch report saved via " + channel + " (\(checked.count) bytes)."
             self.status="Received companion report via " + channel + "."
             self.transferDetails="Receipt confirmed; \(checked.count) bytes saved locally."
         }
@@ -142,23 +150,51 @@ final class WatchLinkModel: NSObject, ObservableObject, WCSessionDelegate {
         transferDetails=connectionState(session)
         if session.activationState != .activated { session.activate() }
     }
+    private func useDirectReceiver(_ reason: String) {
+        #if os(iOS)
+        reportRequestID=nil
+        localLink.ensureReceiving()
+        status=reason + " Wi-Fi receiver opened below. On Watch, tap Send report and enter this address and code."
+        #endif
+    }
     func requestWatchReport() {
         refreshConnection()
-        guard let session, session.activationState == .activated else { status="Companion session is activating. Retry once both apps are open."; return }
-        #if os(iOS)
-        guard session.isPaired, session.isWatchAppInstalled else {
-            status="This iPhone does not recognize its WatchLink Watch companion. Install both apps from the same combined IPA on the current phone/Watch pair."; return
+        // Installed-app registration can be false even while the Watch app is
+        // running. Treat actual reachability as the route criterion and fall
+        // back independently of registration, without prescribing a reinstall.
+        guard let session, session.activationState == .activated, session.isReachable else {
+            useDirectReceiver("Watch Connectivity is unavailable.")
+            return
         }
-        #endif
-        guard session.isReachable else { status="WatchLink on Watch is not reachable. Open it on the paired Watch, then retry."; return }
+        let requestID=UUID()
+        reportRequestID=requestID
         status="Requesting saved Watch report…"
+        DispatchQueue.main.asyncAfter(deadline:.now()+8) { [weak self] in
+            guard let self, self.reportRequestID==requestID else { return }
+            self.useDirectReceiver("The companion request timed out.")
+        }
         session.sendMessage(["kind":"watchlink-request-report"],replyHandler:{ reply in
             if let data=reply["data"] as? Data {
-                do { try self.receive(data,channel:"iPhone request") } catch { self.failure("Import",error) }
+                do { try self.receive(data,channel:"iPhone request") }
+                catch {
+                    DispatchQueue.main.async {
+                        guard self.reportRequestID==requestID else { return }
+                        self.useDirectReceiver("The companion returned an invalid report.")
+                    }
+                }
             } else {
-                DispatchQueue.main.async { self.status=(reply["reason"] as? String) ?? "Watch queued its report. Waiting for delivery." }
+                DispatchQueue.main.async {
+                    guard self.reportRequestID==requestID else { return }
+                    self.status=(reply["reason"] as? String) ?? "Watch queued its report. Waiting for delivery."
+                }
             }
-        },errorHandler:{ self.failure("Request",$0) })
+        },errorHandler:{ error in
+            DispatchQueue.main.async {
+                guard self.reportRequestID==requestID else { return }
+                let detail=error as NSError
+                self.useDirectReceiver("Companion request failed: \(detail.domain)/\(detail.code).")
+            }
+        })
     }
     func sendHTTPReport() {
         do { localLink.sendHTTP(try Self.validatedData(Data(contentsOf:Self.reportURL))) }
@@ -170,7 +206,15 @@ final class WatchLinkModel: NSObject, ObservableObject, WCSessionDelegate {
     }
     func sendReport() {
         refreshConnection()
-        guard let session, session.activationState == .activated else { status="Companion session is not activated. Open both apps and retry."; return }
+        guard let session, session.activationState == .activated, session.isReachable else {
+            #if os(watchOS)
+            showDirectSender=true
+            status="Enter the address and code shown in WatchLink on iPhone."
+            #else
+            useDirectReceiver("Watch Connectivity is unavailable.")
+            #endif
+            return
+        }
         do {
             let data=try Self.validatedData(Data(report.utf8))
             let id=UUID().uuidString

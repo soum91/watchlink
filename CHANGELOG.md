@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.8
+
+- Get Watch report opens the direct HTTP receiver when Watch Connectivity is unavailable, times out, or returns a transfer error. A stale installed-app flag no longer blocks a reachable session.
+- Send report on Watch opens the existing Wi-Fi sender when the companion is unreachable, and after companion transport failures.
+- Put receiver address, code, and saved-report receipt beside Get Watch report; remove the unproven reinstall instruction and keep receipt confirmation separate from connectivity flags.
+- Preserve the active receiver code across repeated requests and use borderless receiver controls to prevent a List-row tap from dispatching multiple button actions.
+- Physical Watch delivery and native multi-pairing remain unverified; this release does not implement another native pairing.
+
 ## 0.1.7
 
 - Replace the Watch raw TCP sender with URLSession HTTP, following Apple TN3135 restrictions on ordinary watchOS apps.

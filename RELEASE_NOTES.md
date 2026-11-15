@@ -1,7 +1,8 @@
-WatchLink 0.1.7 corrects the Watch network API choice.
+WatchLink 0.1.8 fixes the report workflow when Watch Connectivity does not recognize the companion.
 
-Apple TN3135 restricts raw Network.framework connections and Bonjour in ordinary watchOS apps. The previous raw-TCP Watch sender was therefore the wrong design, regardless of passing desktop tests. This release uses supported URLSession HTTP on Watch.
+- Get Watch report starts the short-lived Wi-Fi receiver on unavailable, timed-out, or failed companion requests.
+- Send report on Watch opens the Wi-Fi form when the normal companion route is unavailable.
+- Keep the address, code, saved receipt, and transfer controls together; preserve the active code across repeated requests and prevent automatic List buttons from starting and stopping the receiver together.
+- Remove the unsupported reinstall diagnosis. Native companion registration is still unresolved, and physical Watch HTTP delivery remains unverified. Multi-pairing is not implemented.
 
-On iPhone start Wi-Fi receiver. On Watch enter the iPhone address:port and six-digit code, then Send report over HTTP. Bonjour discovery on Watch is no longer required. The receiver keeps the iPhone awake for its two-minute window, then restores its earlier idle setting. Private IPv4 destinations only; cellular transfers disabled; no cloud endpoint.
-
-Native tests exercise actual URLSession HTTP through the production receiver, exact 65KB report persistence, rejected codes/imports and fragmented TCP framing. These checks do not prove physical Watch routing or permissions. Watch installation/transfer still needs a device retry. Multi-phone pairing remains unimplemented.
+Re-sign the combined iPhone + Watch IPA through EmberSign 0.2.97 or later. The phone-only IPA and Sileo package do not contain the Watch companion.

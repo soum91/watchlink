@@ -18,7 +18,10 @@ import Network
             guard let json=try JSONSerialization.jsonObject(with:data) as? [String:Any], json["platform"] as? String == "watchOS" else { throw CocoaError(.fileReadCorruptFile) }
             received.append(data)
         }
-        server.startReceiving()
+        server.ensureReceiving()
+        let initialCode=server.receiverCode
+        server.ensureReceiving()
+        require(server.receiverCode==initialCode,"repeated receive request rotated the active PIN")
         wait { server.receiving && server.testPort != nil }
         let port=server.testPort!
         let endpoint=NWEndpoint.hostPort(host:"127.0.0.1",port:port)
