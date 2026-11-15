@@ -1,7 +1,7 @@
-WatchLink 0.1.6 hardens the direct report transfer after a device send timeout.
+WatchLink 0.1.7 corrects the Watch network API choice.
 
-TCP headers, payloads and acknowledgements are accumulated across partial reads. A final receipt is flushed before connection cancellation. Incorrect codes, rejected reports and route waits have distinct messages. Network.framework chooses the local route instead of forcing a physical Wi-Fi interface; cellular transport remains prohibited.
+Apple TN3135 restricts raw Network.framework connections and Bonjour in ordinary watchOS apps. The previous raw-TCP Watch sender was therefore the wrong design, regardless of passing desktop tests. This release uses supported URLSession HTTP on Watch.
 
-Real loopback TCP integration tests exercise a 65KB report, incorrect receiver code, rejected imports, a header/body split across writes, exact payload persistence and receipt acknowledgement. These tests do not prove physical Apple Watch routing or diagnose which weakness caused the user's timeout.
+On iPhone start Wi-Fi receiver. On Watch enter the iPhone address:port and six-digit code, then Send report over HTTP. Bonjour discovery on Watch is no longer required. The receiver keeps the iPhone awake for its two-minute window, then restores its earlier idle setting. Private IPv4 destinations only; cellular transfers disabled; no cloud endpoint.
 
-The iPhone rejects iOS reports as Watch transfers and provides Show saved Watch report. Exports use distinct Watch/iPhone filenames. Multi-phone pairing is not implemented. Physical phone/Watch transfer remains unverified.
+Native tests exercise actual URLSession HTTP through the production receiver, exact 65KB report persistence, rejected codes/imports and fragmented TCP framing. These checks do not prove physical Watch routing or permissions. Watch installation/transfer still needs a device retry. Multi-phone pairing remains unimplemented.

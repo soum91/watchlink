@@ -3,7 +3,7 @@
 Experimental pairing-access research for Apple Watch Series 10 on watchOS 27.2,
 an iOS 16 Dopamine iPhone, and a stock iPhone on iOS 27.0.1.
 
-**0.1.6 is an access probe. Dual pairing, phone switching, key preservation,
+**0.1.7 is an access probe. Dual pairing, phone switching, key preservation,
 pairing compatibility bypasses, and a Watch jailbreak are not implemented.**
 
 ## Included
@@ -173,26 +173,24 @@ session state and error domain/code. File transport completion is distinguished
 from acknowledgement that the receiver validated and saved the report. Paired
 physical devices are required to validate these transports.
 
-## Direct Wi-Fi report fallback
+## Direct HTTP report fallback (0.1.7)
 
-If the iPhone reports `Watch app installed=false`, Watch Connectivity cannot
-currently identify the installed companion. The precise installation/signing
-registration cause needs device-side evidence; repeatedly sending through the
-same session does not repair it.
+The raw Network.framework sender used in 0.1.5/0.1.6 is not a supported route
+for an ordinary watchOS app. Apple's TN3135 documents that low-level connections
+and Bonjour are restricted, while ordinary URLSession HTTP/HTTPS is supported:
+https://developer.apple.com/documentation/technotes/tn3135-low-level-networking-on-watchos
 
-In the iPhone app choose **Start Wi-Fi receiver**. On Watch choose **Wi-Fi report
-transfer**, enter the iPhone's six-digit code, tap **Find iPhone receiver** and
-choose the matching receiver name. Allow Local Network permission on both and
-keep both apps open on the same Wi-Fi. This path uses Bonjour plus a bounded TCP
-report frame; it does not require Watch Connectivity association. The receiver
-expires after 120 seconds, permits at most two concurrent/eight total connection
-attempts, and stops after three incorrect codes. It accepts only bounded, validated
-WatchLink JSON and acknowledges successful local persistence. There is no cloud
-server or background upload. Physical discovery and transfer remain unverified.
+On iPhone tap **Start Wi-Fi receiver**. It shows a private IPv4 address:port and
+a six-digit code. On Watch open **Wi-Fi report transfer**, enter that address and
+code, then tap **Send report over HTTP**. Keep both apps open and allow Local
+Network access. URLSession handles the Watch's supported networking route; no
+Watch Connectivity app association or Watch Bonjour discovery is needed.
 
-Version 0.1.6 accumulates fragmented TCP data and uses final-message receipts
-with a flush interval. Route selection is no longer forced to a physical Wi-Fi
-interface, and cellular routes remain prohibited. Receiver frame timeout is 60
-seconds. iPhone import requires `platform: watchOS`; phone scans are rejected as
-Watch transfers. Use **Show saved Watch report** to reopen the persisted Watch
-report, and distinguish `WatchLink-Watch-report.json` from iPhone exports.
+The receiver expires in two minutes, keeps the iPhone awake during that window,
+and restores its prior idle setting when stopped. It bounds HTTP headers, body
+size, connection count and failed codes. A receipt is returned only after the
+phone validates and saves the Watch report. Cellular transfers are disabled.
+Watch ATS permits cleartext HTTP solely because the receiver is a local service;
+application code accepts only explicitly entered private IPv4 destinations. No
+cloud service or automatic upload is involved. Physical Watch delivery still
+requires verification, even when real desktop URLSession/TCP tests pass.

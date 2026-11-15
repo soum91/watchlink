@@ -69,6 +69,7 @@ def build_apps(number):
         name = "WatchLinkWatch" if watch else "WatchLink"
         properties = {"CFBundleDisplayName": "WatchLink", "NSLocalNetworkUsageDescription": "Transfer your WatchLink report directly between your Watch and iPhone on local Wi-Fi.", "NSBonjourServices": ["_watchlink._tcp"]}
         if watch:
+            properties["NSAppTransportSecurity"] = {"NSAllowsArbitraryLoads": True, "NSAllowsLocalNetworking": True}
             properties.update({"WKCompanionAppBundleIdentifier": "dev.watchlink.companion", "WKRunsIndependentlyOfCompanionApp": True})
         else:
             properties.update({"UILaunchScreen": {}, "UIApplicationSceneManifest": {"UIApplicationSupportsMultipleScenes": False}, "UISupportedInterfaceOrientations": ["UIInterfaceOrientationPortrait"]})

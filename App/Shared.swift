@@ -160,6 +160,10 @@ final class WatchLinkModel: NSObject, ObservableObject, WCSessionDelegate {
             }
         },errorHandler:{ self.failure("Request",$0) })
     }
+    func sendHTTPReport() {
+        do { localLink.sendHTTP(try Self.validatedData(Data(contentsOf:Self.reportURL))) }
+        catch { localLink.status="Run a scan on this Watch first; no saved report is available." }
+    }
     func sendLocalReport(to receiver: LocalReportLink.Receiver) {
         do { localLink.send(try Self.validatedData(Data(contentsOf: Self.reportURL)), to: receiver) }
         catch { localLink.status="Run a scan on this Watch first; no saved report is available." }

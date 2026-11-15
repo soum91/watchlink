@@ -50,6 +50,7 @@ import Network
         func readReply() {
             connection.receive(minimumIncompleteLength:1,maximumLength:2-reply.count) { data,_,_,error in
                 require(error==nil,"fragmented receipt error")
+                require(data?.isEmpty == false,"empty or closed receipt")
                 if let data { reply.append(data) }
                 if reply.count<2 { readReply() }
             }
@@ -68,7 +69,25 @@ import Network
         wait { reply.count==2 }
         require(reply==Data("OK".utf8),"fragmented frame must receive OK")
         require(received==[payload,payload],"split header and body must reconstruct exactly")
-        connection.stateUpdateHandler=nil; connection.cancel(); server.stopReceiving()
-        print("Real TCP tests passed: 65KB report, wrong PIN, rejected import, fragmented header/body and acknowledged receipt.")
+        connection.stateUpdateHandler=nil; connection.cancel()
+        pause()
+        let httpClient=LocalReportLink()
+        httpClient.enteredAddress="127.0.0.1:\(port.rawValue)"
+        httpClient.enteredCode=server.receiverCode
+        httpClient.sendHTTP(payload)
+        wait { httpClient.status=="iPhone received and saved the Watch report." }
+        require(received==[payload,payload,payload],"URLSession HTTP must persist exact report")
+        pause()
+        httpClient.enteredCode=server.receiverCode=="000000" ? "000001" : "000000"
+        httpClient.sendHTTP(payload)
+        wait { httpClient.status.contains("rejected the code") }
+        require(received.count==3,"HTTP wrong code must not persist")
+        pause()
+        httpClient.enteredCode=server.receiverCode
+        httpClient.sendHTTP(Data("invalid JSON".utf8))
+        wait { httpClient.status.contains("rejected HTTP report (status 400)") }
+        require(received.count==3,"HTTP rejected import must not persist")
+        server.stopReceiving()
+        print("Real TCP tests passed: 65KB report, wrong PIN, rejected import, fragmented header/body, URLSession HTTP, HTTP rejection and acknowledged receipt.")
     }
 }

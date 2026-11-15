@@ -109,3 +109,14 @@ The native build job runs actual loopback TCP tests of the production transport
 with Bonjour advertising disabled only in that test binary. Valid/invalid codes,
 import errors, 65KB payloads, exact bytes and fragmented framing are exercised.
 Actual watchOS route availability and local-network permission still need devices.
+
+## 0.1.7 supported watchOS HTTP transport
+
+Apple TN3135 explicitly restricts raw NWConnection and Bonjour outside special
+audio/VoIP/device-discovery cases on watchOS. The previous direct sender was
+therefore inappropriate for this app. No fake audio or special entitlement is
+used. The Watch now sends HTTP with URLSession to an entered private IPv4 receiver.
+The macOS fixture tests the same URLSession client and production HTTP parser
+against exact payload, invalid-code and rejected-import cases. Physical Watch
+network reachability, URLSession routing and Local Network permissions remain
+device-only checks.

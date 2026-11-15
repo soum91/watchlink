@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.7
+
+- Replace the Watch raw TCP sender with URLSession HTTP, following Apple TN3135 restrictions on ordinary watchOS apps.
+- Remove Bonjour discovery from the Watch flow; display the receiver private IPv4 address and port on iPhone for entry on Watch.
+- Add bounded HTTP parsing and URLSession end-to-end transport tests alongside TCP framing tests.
+- Keep the iPhone awake during the two-minute receiver window and restore its previous idle setting afterward.
+- Limit the Watch HTTP destination to explicitly entered private IPv4 addresses; add Watch-only ATS settings required for local cleartext HTTP.
+
 ## 0.1.6
 
 - Accumulate TCP headers, bodies and receipts across fragmented reads instead of assuming a single complete read.

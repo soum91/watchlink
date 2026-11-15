@@ -166,12 +166,12 @@ struct LocalReceiverView: View {
         VStack(alignment: .leading, spacing: 10) {
             Button("Start Wi-Fi receiver") { link.startReceiving() }
             if link.receiving {
-                Text(link.receiverName).font(.caption.monospaced())
+                Text("Address: " + link.receiverAddress).font(.body.monospaced()).textSelection(.enabled)
                 Text("Code: " + link.receiverCode).font(.title2.monospaced())
                 Button("Stop receiver") { link.stopReceiving() }
             }
             Text(link.status).font(.footnote)
-            Text("On Watch: Wi-Fi report transfer → Find iPhone receiver. Enter this code and choose the matching name. Keep both apps open on the same Wi-Fi. Allow Local Network access.").font(.footnote)
+            Text("On Watch: Wi-Fi report transfer → enter this address and code → Send report over HTTP. Keep both apps open on the same Wi-Fi. Allow Local Network access.").font(.footnote)
         }
     }
 }

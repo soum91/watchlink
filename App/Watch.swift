@@ -47,13 +47,12 @@ struct LocalWatchSender: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 10) {
                 Text("Start Wi-Fi receiver in the iPhone app first.").font(.caption2)
+                TextField("iPhone address:port", text: $link.enteredAddress)
                 TextField("6-digit iPhone code", text: $link.enteredCode)
-                Button("Find iPhone receiver") { link.findReceivers() }
-                ForEach(link.receivers) { receiver in
-                    Button("Send to " + receiver.id) { model.sendLocalReport(to: receiver) }
-                }
+                Button("Send report over HTTP") { model.sendHTTPReport() }
+                Text("Use the address shown on iPhone. No Watch Connectivity or receiver discovery is required.").font(.caption2)
                 Text(link.status).font(.caption2)
-                Button("Stop searching") { link.stopSearching() }
+
             }.padding()
         }
     }
