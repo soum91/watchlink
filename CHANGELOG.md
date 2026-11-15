@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.10
+
+- Invoke the NRPairedDeviceRegistry paired-device query selectors (sharedInstance, getPairedDevices, getDevices, getActivePairedDevice) read-only, reporting only call outcome, nil/thrown status, result and element class names, array counts, and the active device's property names. No property values, identifiers, names, serials, or key material are read or exported, and nothing is modified.
+- Add registryInvocationSurvey to the iPhone and Watch reports alongside the existing availability-only registryAPISurvey.
+
 ## 0.1.9
 
 - Advertise a short-lived iPhone report receiver using Core Bluetooth; Watch scans the dedicated service and lists nearby receiver names without IP or PIN entry.

@@ -1,10 +1,10 @@
-WatchLink 0.1.9 adds nearby iPhone discovery and direct Bluetooth report transfer.
+WatchLink 0.1.10 invokes the NanoRegistry paired-device query API read-only.
 
-- On iPhone, Get Watch report arms a 2-minute Bluetooth receiver when Watch Connectivity is unavailable.
-- On Watch, Send report opens a nearby-iPhone picker. Choose the matching receiver name; report bytes transfer over Bluetooth with a persisted receipt. The last successful receiver is selected automatically on the next explicit send.
-- No IP or PIN entry is needed for this Bluetooth route. Manual HTTP is retained as a fallback. Both apps must remain open and Bluetooth access must be allowed.
-- Reports are capped at 128 KiB; malformed and incomplete streams are rejected, and the final write is acknowledged only after saving. No pairing records or keys are changed.
+- The report now calls NRPairedDeviceRegistry sharedInstance and its getPairedDevices, getDevices, and getActivePairedDevice selectors instead of only checking that they exist.
+- For each call it records whether it was invoked, returned nil, or threw, plus result and element class names and array counts. For the active paired device it records the class name and its property names only.
+- No property values, device identifiers, names, serials, filenames, or key material are read or exported. No pairing records, daemons, MobileGestalt, or keychain values are changed.
+- The earlier availability-only registryAPISurvey is retained; registryInvocationSurvey is the new invoking section.
 
-The release tests framing and compiles both app targets. Physical Watch discovery/transfer remains unverified. Native multi-pairing and companion registration repair are not implemented.
+The release tests framing and compiles both app targets. On a normal sandbox these selectors are expected to return nil or throw unless the signature carries the required NanoRegistry entitlements; that outcome is itself the result. Physical Watch behavior and any non-nil return remain unverified. Native multi-pairing is not implemented.
 
 Update the combined package through EmberSign 0.2.97 or later.

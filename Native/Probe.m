@@ -12,6 +12,7 @@
 #import <dirent.h>
 #import <mach/mach.h>
 #import <objc/runtime.h>
+#import <objc/message.h>
 
 #if TARGET_OS_IOS
 NSString *DWCopyReport(NSString *text) {
@@ -166,6 +167,90 @@ static NSDictionary *RegistryAPISurvey(void) {
     NSDictionary *result=@{@"frameworkLoaded":@(framework!=NULL),@"registryClassPresent":@(registry!=Nil),@"selectorsPresent":methods,@"methodsInvoked":@NO};
     // Keep an Objective-C framework loaded for process lifetime; unloading registered classes is unsafe.
     return result;
+}
+
+// Read-only NanoRegistry pairing-API invocation. Calls the paired-device query
+// selectors and reports ONLY metadata: invoked/nil/thrown, result class names,
+// array counts, and the active device's property NAMES (Apple API names, not
+// values). No device identifiers, names, serials, or key material are read or
+// exported, and nothing is modified.
+static NSDictionary *RegistryInvocationSurvey(void) {
+    dlopen("/System/Library/PrivateFrameworks/NanoRegistry.framework/NanoRegistry", RTLD_LAZY | RTLD_LOCAL);
+    Class registry = objc_getClass("NRPairedDeviceRegistry");
+    NSMutableDictionary *out = [@{@"registryClassPresent": @(registry != Nil), @"methodsInvoked": @YES} mutableCopy];
+    if (!registry) {
+        out[@"methodsInvoked"] = @NO;
+        out[@"reason"] = @"NRPairedDeviceRegistry class unavailable.";
+        return out;
+    }
+    typedef id (*Send)(id, SEL);
+    Send send = (Send)objc_msgSend;
+
+    id instance = nil;
+    NSMutableDictionary *shared = [@{@"invoked": @YES} mutableCopy];
+    @try {
+        SEL s = sel_registerName("sharedInstance");
+        if ([registry respondsToSelector:s]) {
+            instance = send((id)registry, s);
+            shared[@"returnedNil"] = @(instance == nil);
+            if (instance) shared[@"resultClass"] = NSStringFromClass([instance class]);
+        } else {
+            shared[@"invoked"] = @NO;
+            shared[@"reason"] = @"Class does not respond to sharedInstance.";
+        }
+    } @catch (NSException *e) {
+        shared[@"threw"] = @YES; shared[@"exception"] = e.name ?: @"unknown";
+    }
+    out[@"sharedInstance"] = shared;
+
+    NSMutableDictionary *calls = [NSMutableDictionary dictionary];
+    for (NSString *name in @[@"getPairedDevices", @"getDevices", @"getActivePairedDevice"]) {
+        NSMutableDictionary *entry = [NSMutableDictionary dictionary];
+        SEL sel = sel_registerName(name.UTF8String);
+        if (!instance) { entry[@"invoked"] = @NO; entry[@"reason"] = @"No shared instance."; calls[name] = entry; continue; }
+        if (![instance respondsToSelector:sel]) { entry[@"invoked"] = @NO; entry[@"reason"] = @"Instance does not respond."; calls[name] = entry; continue; }
+        entry[@"invoked"] = @YES;
+        @try {
+            id result = send(instance, sel);
+            entry[@"returnedNil"] = @(result == nil);
+            if (result) {
+                entry[@"resultClass"] = NSStringFromClass([result class]);
+                if ([result isKindOfClass:NSArray.class]) {
+                    entry[@"count"] = @([(NSArray *)result count]);
+                    id first = [(NSArray *)result firstObject];
+                    if (first) entry[@"elementClass"] = NSStringFromClass([first class]);
+                }
+            }
+        } @catch (NSException *e) {
+            entry[@"threw"] = @YES; entry[@"exception"] = e.name ?: @"unknown";
+        }
+        calls[name] = entry;
+    }
+    out[@"calls"] = calls;
+
+    // Metadata only: property NAMES on the active paired-device class. No values read.
+    @try {
+        SEL sel = sel_registerName("getActivePairedDevice");
+        if (instance && [instance respondsToSelector:sel]) {
+            id active = send(instance, sel);
+            if (active) {
+                unsigned int count = 0;
+                objc_property_t *props = class_copyPropertyList([active class], &count);
+                NSMutableArray *names = [NSMutableArray array];
+                for (unsigned int i = 0; i < count && names.count < 64; i++) {
+                    const char *pn = property_getName(props[i]);
+                    if (pn) [names addObject:[NSString stringWithUTF8String:pn]];
+                }
+                if (props) free(props);
+                out[@"activeDeviceClass"] = NSStringFromClass([active class]);
+                out[@"activeDevicePropertyCount"] = @(count);
+                out[@"activeDevicePropertyNames"] = names;
+            }
+        }
+    } @catch (NSException *e) {
+        out[@"activeDeviceIntrospectionThrew"] = e.name ?: @"unknown";
+    }
+    return out;
 }
 
 static BOOL Restore(NSString *cache, NSString *backup, NSString *journal, NSString **error) {
@@ -330,7 +415,7 @@ NSString *DWRunProbe(BOOL protectedAccess) {
             @"build": bundle[@"CFBundleVersion"] ?: @"?", @"platform": TARGET_OS_WATCH ? @"watchOS" : @"iOS",
             @"os": NSProcessInfo.processInfo.operatingSystemVersionString, @"uid": @(getuid()), @"euid": @(geteuid()),
             @"timestamp": @([[NSDate date] timeIntervalSince1970]), @"protectedProbeRequested": @(protectedAccess),
-            @"checks": checks, @"researchSchema": @2, @"serviceSurvey": ServiceSurvey(), @"registryAPISurvey": RegistryAPISurvey(), @"watchOSQuerySupportVerified": @NO, @"containerIdentifiersExported": @NO, @"pairingChanged": @NO, @"keyMaterialRead": @NO, @"dualPairingImplemented": @NO,
+            @"checks": checks, @"researchSchema": @2, @"serviceSurvey": ServiceSurvey(), @"registryAPISurvey": RegistryAPISurvey(), @"registryInvocationSurvey": RegistryInvocationSurvey(), @"watchOSQuerySupportVerified": @NO, @"containerIdentifiersExported": @NO, @"pairingChanged": @NO, @"keyMaterialRead": @NO, @"dualPairingImplemented": @NO,
             @"keyPreservationVerified": @NO, @"interpretation": @"File-open access does not prove keychain access, key preservation, protocol compatibility, or dual pairing."};
         NSData *json = [NSJSONSerialization dataWithJSONObject:report options:NSJSONWritingPrettyPrinted | NSJSONWritingSortedKeys error:nil];
         if (json.length > 120 * 1024) {
