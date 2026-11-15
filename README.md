@@ -3,7 +3,7 @@
 Experimental pairing-access research for Apple Watch Series 10 on watchOS 27.2,
 an iOS 16 Dopamine iPhone, and a stock iPhone on iOS 27.0.1.
 
-**0.1.5 is an access probe. Dual pairing, phone switching, key preservation,
+**0.1.6 is an access probe. Dual pairing, phone switching, key preservation,
 pairing compatibility bypasses, and a Watch jailbreak are not implemented.**
 
 ## Included
@@ -189,3 +189,10 @@ expires after 120 seconds, permits at most two concurrent/eight total connection
 attempts, and stops after three incorrect codes. It accepts only bounded, validated
 WatchLink JSON and acknowledges successful local persistence. There is no cloud
 server or background upload. Physical discovery and transfer remain unverified.
+
+Version 0.1.6 accumulates fragmented TCP data and uses final-message receipts
+with a flush interval. Route selection is no longer forced to a physical Wi-Fi
+interface, and cellular routes remain prohibited. Receiver frame timeout is 60
+seconds. iPhone import requires `platform: watchOS`; phone scans are rejected as
+Watch transfers. Use **Show saved Watch report** to reopen the persisted Watch
+report, and distinguish `WatchLink-Watch-report.json` from iPhone exports.

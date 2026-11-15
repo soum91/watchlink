@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.6
+
+- Accumulate TCP headers, bodies and receipts across fragmented reads instead of assuming a single complete read.
+- Send a final receipt and allow it to flush before closing; distinguish PIN rejection, invalid reports and connection errors.
+- Remove the forced Wi-Fi interface requirement while prohibiting cellular transport; allow local routes selected by Network.framework.
+- Add real loopback TCP integration checks for a 65KB report, wrong PIN, rejected import and fragmented framing.
+- Reject iPhone payloads as Watch reports, add Show saved Watch report, and export platform-specific filenames.
+
 ## 0.1.5
 
 - Add user-started local Wi-Fi report transfer independent of Watch Connectivity association.

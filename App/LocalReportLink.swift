@@ -28,7 +28,7 @@ final class LocalReportLink: ObservableObject {
     private func parameters() -> NWParameters {
         let value = NWParameters.tcp
         value.includePeerToPeer = true
-        value.requiredInterfaceType = .wifi
+        value.prohibitedInterfaceTypes = [.cellular]
         return value
     }
     private func describe(_ error: Error) -> String {
@@ -50,7 +50,9 @@ final class LocalReportLink: ObservableObject {
         do {
             let current=try NWListener(using:parameters())
             listener=current
+            #if !WATCHLINK_TRANSPORT_TESTS
             current.service=NWListener.Service(name:receiverName,type:service)
+            #endif
             current.stateUpdateHandler={ [weak self, weak current] state in
                 guard let self, self.listener === current else { return }
                 switch state {
@@ -69,33 +71,68 @@ final class LocalReportLink: ObservableObject {
     private func finish(_ id: UUID) {
         if let connection=connections.removeValue(forKey:id) { connection.stateUpdateHandler=nil; connection.cancel() }
     }
+    #if WATCHLINK_TRANSPORT_TESTS
+    var testPort: NWEndpoint.Port? { listener?.port }
+    #endif
+    private func readExactly(_ count: Int, from connection: NWConnection, accumulated: Data = Data(), completion: @escaping (Result<Data, Error>) -> Void) {
+        guard accumulated.count < count else { completion(.success(accumulated)); return }
+        connection.receive(minimumIncompleteLength: 1, maximumLength: count - accumulated.count) { [weak self] data, _, complete, error in
+            if let error { completion(.failure(error)); return }
+            var next=accumulated
+            if let data { next.append(data) }
+            if next.count==count { completion(.success(next)); return }
+            guard !complete, let data, !data.isEmpty, let self else {
+                completion(.failure(CocoaError(.fileReadCorruptFile))); return
+            }
+            self.readExactly(count, from: connection, accumulated: next, completion: completion)
+        }
+    }
+    private func reply(_ value: String, on connection: NWConnection, id: UUID) {
+        connection.send(content: Data(value.utf8), contentContext: .finalMessage, isComplete: true, completion: .contentProcessed { [weak self] _ in
+            // Let the peer consume the receipt before cancelling the connection.
+            DispatchQueue.main.asyncAfter(deadline: .now()+1) { self?.finish(id) }
+        })
+    }
     private func accept(_ connection: NWConnection) {
         guard connections.count<2, acceptedConnections<8 else { connection.cancel(); return }
         acceptedConnections+=1
         let id=UUID(); connections[id]=connection
         connection.start(queue:.main)
-        DispatchQueue.main.asyncAfter(deadline:.now()+15) { [weak self] in self?.finish(id) }
-        connection.receive(minimumIncompleteLength:8,maximumLength:8) { [weak self] header,_,_,_ in
-            guard let self, let header, header.count==8, header.prefix(4)==Data("WLR1".utf8) else { self?.finish(id); return }
+        status="Watch connected. Reading report header…"
+        DispatchQueue.main.asyncAfter(deadline:.now()+60) { [weak self] in
+            guard let self, self.connections[id] != nil else { return }
+            self.status="Receiver timed out while reading the report."; self.finish(id)
+        }
+        readExactly(8,from:connection) { [weak self] result in
+            guard let self else { return }
+            guard case let .success(header)=result, header.prefix(4)==Data("WLR1".utf8) else {
+                self.status="Invalid or interrupted report header."; self.reply("HD",on:connection,id:id); return
+            }
             let length=header.suffix(4).reduce(0) { ($0<<8)|Int($1) }
-            guard length>0, length<=self.frameLimit else { self.finish(id); return }
-            connection.receive(minimumIncompleteLength:length,maximumLength:length) { [weak self] body,_,_,_ in
-                guard let self, let body, body.count==length else { self?.finish(id); return }
+            guard length>0, length<=self.frameLimit else { self.status="Report frame exceeds limit."; self.reply("SZ",on:connection,id:id); return }
+            self.status="Reading \(length) report bytes…"
+            self.readExactly(length,from:connection) { [weak self] result in
+                guard let self else { return }
                 do {
+                    let body=try result.get()
                     let packet=try JSONDecoder().decode(Packet.self,from:body)
-                    guard self.receiving, packet.code==self.receiverCode, packet.report.count<=128*1024 else {
+                    guard self.receiving, packet.code==self.receiverCode else {
                         self.rejectedCodes+=1
-                        connection.send(content:Data("NO".utf8),completion:.contentProcessed { _ in self.finish(id) })
-                        if self.rejectedCodes>=3 { self.stopReceiving(); self.status="Receiver stopped after incorrect codes. Start again." }
+                        self.status="Incorrect or expired receiver code."
+                        self.reply("PC",on:connection,id:id)
+                        if self.rejectedCodes>=3 {
+                            DispatchQueue.main.asyncAfter(deadline:.now()+1) { self.stopReceiving(); self.status="Receiver stopped after incorrect codes. Start again." }
+                        }
                         return
                     }
+                    guard packet.report.count<=128*1024 else { self.reply("SZ",on:connection,id:id); return }
                     guard let receive=self.onReport else { throw CocoaError(.fileWriteUnknown) }
                     try receive(packet.report)
                     self.status="Watch report received and saved. Use Copy, Share or Save below."
-                    connection.send(content:Data("OK".utf8),completion:.contentProcessed { _ in self.finish(id) })
+                    self.reply("OK",on:connection,id:id)
                 } catch {
-                    self.status="Report rejected: " + self.describe(error)
-                    connection.send(content:Data("NO".utf8),completion:.contentProcessed { _ in self.finish(id) })
+                    self.status="Report rejected or interrupted: " + self.describe(error)
+                    self.reply("RJ",on:connection,id:id)
                 }
             }
         }
@@ -146,18 +183,26 @@ final class LocalReportLink: ObservableObject {
                     connection.send(content:frame,completion:.contentProcessed { [weak self] error in
                         guard let self else { return }
                         if let error { self.status="Send failed: " + self.describe(error); self.finish(id); return }
-                        connection.receive(minimumIncompleteLength:2,maximumLength:2) { [weak self] data,_,_,error in
+                        self.status="Report sent. Waiting for iPhone to save it…"
+                        self.readExactly(2,from:connection) { [weak self] result in
                             guard let self else { return }
-                            self.status=data==Data("OK".utf8) ? "iPhone received and saved the Watch report." : "No receipt. Check receiver code and restart receiver." + (error.map { " " + self.describe($0) } ?? "")
+                            switch result {
+                            case .success(let data):
+                                let code=String(data:data,encoding:.utf8) ?? "??"
+                                let messages=["OK":"iPhone received and saved the Watch report.", "PC":"iPhone rejected the receiver code. Enter the current code.", "RJ":"iPhone rejected the report. Check its error message.", "SZ":"Report is too large.", "HD":"iPhone rejected the transfer header."]
+                                self.status=messages[code] ?? "Unknown receipt: " + code
+                            case .failure(let error): self.status="Receipt interrupted: " + self.describe(error)
+                            }
                             self.finish(id)
                         }
                     })
+                case .waiting(let error): self.status="Waiting for local route: " + self.describe(error)
                 case .failed(let error): self.status="Connection failed: " + self.describe(error); self.finish(id)
                 default: break
                 }
             }
             connection.start(queue:.main)
-            DispatchQueue.main.asyncAfter(deadline:.now()+20) { [weak self] in
+            DispatchQueue.main.asyncAfter(deadline:.now()+60) { [weak self] in
                 guard let self, self.connections[id] != nil else { return }
                 self.status="Local transfer timed out. Keep both apps open on the same Wi-Fi."; self.finish(id)
             }

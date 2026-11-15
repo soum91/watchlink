@@ -116,6 +116,11 @@ final class WatchLinkModel: NSObject, ObservableObject, WCSessionDelegate {
     }
     private func receive(_ data: Data, channel: String) throws {
         let checked=try Self.validatedData(data)
+        #if os(iOS)
+        guard let origin=try JSONSerialization.jsonObject(with:checked) as? [String:Any], origin["platform"] as? String == "watchOS" else {
+            throw CocoaError(.fileReadCorruptFile)
+        }
+        #endif
         try checked.write(to:Self.receivedReportURL,options:.atomic)
         guard let text=String(data:checked,encoding:.utf8) else { throw CocoaError(.fileReadInapplicableStringEncoding) }
         DispatchQueue.main.async {
@@ -123,6 +128,14 @@ final class WatchLinkModel: NSObject, ObservableObject, WCSessionDelegate {
             self.status="Received companion report via " + channel + "."
             self.transferDetails="Receipt confirmed; \(checked.count) bytes saved locally."
         }
+    }
+    func showReceivedWatchReport() {
+        do {
+            let data=try Self.validatedData(Data(contentsOf:Self.receivedReportURL))
+            let json=try JSONSerialization.jsonObject(with:data) as? [String:Any]
+            guard json?["platform"] as? String == "watchOS", let text=String(data:data,encoding:.utf8) else { throw CocoaError(.fileReadCorruptFile) }
+            report=text; status="Showing the saved Watch report."
+        } catch { status="No verified Watch report has been received yet. The current report may be an iPhone scan." }
     }
     func refreshConnection() {
         guard let session else { status="Watch Connectivity is unavailable."; return }

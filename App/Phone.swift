@@ -22,6 +22,7 @@ import UIKit
                     }
                     Section("Watch") {
                         Button("Get Watch report") { model.requestWatchReport() }
+                        Button("Show saved Watch report") { model.showReceivedWatchReport() }
                         Button("Check companion connection") { model.refreshConnection() }
                         Text(model.transferDetails).font(.footnote).textSelection(.enabled)
                         Text("Install the signed Watch app on the currently paired Watch. Run its scan, then tap Send report. Sileo installs the iPhone companion only.").font(.footnote)
@@ -91,7 +92,8 @@ struct ReportExportRequest: Identifiable {
             .appendingPathComponent(id.uuidString, isDirectory: true)
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true,
                                                 attributes: [.posixPermissions: 0o700])
-        let fileURL = directory.appendingPathComponent("WatchLink-report.json")
+        let source = json["platform"] as? String == "watchOS" ? "Watch" : "iPhone"
+        let fileURL = directory.appendingPathComponent("WatchLink-" + source + "-report.json")
         // Export the displayed report snapshot, including a received Watch report.
         try data.write(to: fileURL, options: .atomic)
         try FileManager.default.setAttributes([.posixPermissions: 0o600], ofItemAtPath: fileURL.path)

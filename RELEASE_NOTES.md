@@ -1,7 +1,7 @@
-WatchLink 0.1.5 adds a direct local Wi-Fi report transfer.
+WatchLink 0.1.6 hardens the direct report transfer after a device send timeout.
 
-The supplied screenshot shows activation=2, paired=true, but Watch app installed=false. Watch Connectivity does not currently associate the installed apps. The precise registration/signing cause remains unconfirmed.
+TCP headers, payloads and acknowledgements are accumulated across partial reads. A final receipt is flushed before connection cancellation. Incorrect codes, rejected reports and route waits have distinct messages. Network.framework chooses the local route instead of forcing a physical Wi-Fi interface; cellular transport remains prohibited.
 
-On iPhone start Wi-Fi receiver. On Watch open Wi-Fi report transfer, enter the displayed 6-digit code, find the receiver and choose its matching name. Both devices must be on the same local Wi-Fi with Local Network permission and both apps open. The receiver expires after two minutes and acknowledges only after validating and saving the report. No Internet service or automatic upload is used.
+Real loopback TCP integration tests exercise a 65KB report, incorrect receiver code, rejected imports, a header/body split across writes, exact payload persistence and receipt acknowledgement. These tests do not prove physical Apple Watch routing or diagnose which weakness caused the user's timeout.
 
-This bypasses Watch Connectivity for report delivery; it does not fix Apple's app association or implement multi-phone pairing. Physical local-network discovery and delivery remain unverified.
+The iPhone rejects iOS reports as Watch transfers and provides Show saved Watch report. Exports use distinct Watch/iPhone filenames. Multi-phone pairing is not implemented. Physical phone/Watch transfer remains unverified.

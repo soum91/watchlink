@@ -97,3 +97,15 @@ source was inspected without modifying its signing engine on an unproven theory.
 The new explicit Wi-Fi channel avoids that dependency for report delivery only.
 Compilation/package checks cannot prove physical Bonjour discovery, local network
 permissions, router reachability, or TCP delivery. Those remain device checks.
+
+## 0.1.6 TCP regression coverage
+
+The user confirmed receiver discovery succeeds but send fails/times out. No exact
+network error code was supplied. Code inspection found forced interface selection,
+one-shot stream reads and immediate cancellation after receipt writes. These
+weaknesses are addressed without claiming a proven device-side root cause.
+
+The native build job runs actual loopback TCP tests of the production transport
+with Bonjour advertising disabled only in that test binary. Valid/invalid codes,
+import errors, 65KB payloads, exact bytes and fragmented framing are exercised.
+Actual watchOS route availability and local-network permission still need devices.
