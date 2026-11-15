@@ -222,7 +222,7 @@ final class WatchLinkModel: NSObject, ObservableObject, WCSessionDelegate {
         } catch { failure("Import file",error) }
     }
     func session(_ session: WCSession, didFinish fileTransfer: WCSessionFileTransfer, error: Error?) {
-        let id=fileTransfer.metadata?["id"] as? String
+        let id=fileTransfer.file.metadata?["id"] as? String
         if let error { failure("File transfer",error) }
         else { DispatchQueue.main.async {
             if self.deliveryID==id { self.status="File delivered; waiting for companion receipt acknowledgement." }
