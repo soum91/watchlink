@@ -21,6 +21,9 @@ import UIKit
                         Text(model.status).font(.footnote).foregroundStyle(.secondary)
                     }
                     Section("Watch") {
+                        Button("Get Watch report") { model.requestWatchReport() }
+                        Button("Check companion connection") { model.refreshConnection() }
+                        Text(model.transferDetails).font(.footnote).textSelection(.enabled)
                         Text("Install the signed Watch app on the currently paired Watch. Run its scan, then tap Send report. Sileo installs the iPhone companion only.").font(.footnote)
                         Text("Phone switching and a second native pairing are not implemented.").font(.footnote).foregroundStyle(.orange)
                     }

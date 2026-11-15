@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.4
+
+- Let the iPhone request the saved Watch report directly while both apps are open.
+- Add immediate delivery and application-context fallback alongside immutable queued file snapshots.
+- Confirm report receipt after validation and local persistence; retain actionable error domain/code and session state.
+- Add native Watch Share actions for full report text and a plain-text file, plus a compact on-watch summary.
+
 ## 0.1.3
 
 - Compare legacy MCM flags with worse_query default and alternate query modes using separate token, access, and restoration results.

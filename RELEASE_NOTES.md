@@ -1,8 +1,7 @@
-WatchLink 0.1.3 expands access research for the multi-phone pairing project.
+WatchLink 0.1.4 repairs report retrieval paths.
 
-- Direct bounded directory/container surveys identify known pairing-component categories and registry storage candidates without exporting identifiers, filenames, records, or keys.
-- Protected scans compare the existing MCM method with worse_query default and alternate query configurations, reporting actual access and cleanup separately.
-- Passive service-port lookup and NanoRegistry API availability checks identify additional research routes without invoking pairing operations.
-- Protected scans still need a separately provisioned dedicated App Group. Default IPA installation requests no App Groups. watchOS support remains unverified.
+The iPhone app now has Get Watch report. Open WatchLink on the Watch and request its saved report from the paired iPhone. Watch Send report attempts immediate messaging and background application context as well as an immutable file snapshot. Receipt acknowledgement follows validation and local persistence. Connection state and error domain/code replace the generic failure alone.
 
-This does not implement multi-phone pairing or prove key preservation. No pairing records, daemons, MobileGestalt or keychain state are modified. Native compilation/package validation cannot establish physical-device access.
+The Watch also offers native Share report text, Share report file (.txt), and a compact readable summary. watchOS has no iPhone-style clipboard button here; share to an available service and copy on the phone. Physical transport and sharing require device verification.
+
+The supplied 0.1.3 report was from iOS 27.2, with protected modes skipped for missing App Group provisioning and sandbox-denied file access. It was not the Watch report. Multi-phone pairing remains unimplemented.

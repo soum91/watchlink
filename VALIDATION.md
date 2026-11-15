@@ -75,3 +75,15 @@ detection, non-export of container names/identifiers, refusal to follow metadata
 symlinks, and absent paths. Device access, service lookup authorization, protected
 mode behavior, and watchOS compatibility remain unverified until device reports
 are collected. No pairing APIs are invoked or pairing/keychain values changed.
+
+## 0.1.4 report transport
+
+The supplied iOS 27.2 report confirmed sandbox denial and missing App Group
+provisioning, not Watch access. The Watch screenshot confirmed only generic file
+transfer failure in 0.1.3; no error domain/code was previously exposed.
+
+The transport now supports a foreground iPhone request, immediate report delivery,
+background application context, immutable queued file snapshots, validation before
+persistence and receipt acknowledgement. A native watchOS Share sheet provides
+an independent export route. Native compilation covers API availability, but
+physical phone/Watch delivery, sharing and cross-app copy remain unverified.

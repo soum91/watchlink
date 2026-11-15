@@ -3,7 +3,7 @@
 Experimental pairing-access research for Apple Watch Series 10 on watchOS 27.2,
 an iOS 16 Dopamine iPhone, and a stock iPhone on iOS 27.0.1.
 
-**0.1.3 is an access probe. Dual pairing, phone switching, key preservation,
+**0.1.4 is an access probe. Dual pairing, phone switching, key preservation,
 pairing compatibility bypasses, and a Watch jailbreak are not implemented.**
 
 ## Included
@@ -156,3 +156,19 @@ Service lookup sends no protocol messages. Framework inspection invokes no pairi
 methods. A reachable service or present method is not proof of authorization.
 These results identify candidate routes for further native pairing research; they
 do not implement concurrent companions or demonstrate preservation of pairing keys.
+
+## Retrieve a Watch report
+
+Open WatchLink on the paired iPhone and on the Watch. Tap **Get Watch report**
+on the iPhone to request the Watch's own saved scan. The iPhone validates and
+saves it before offering Copy/Share/Save. Reports up to 48 KiB use an immediate
+reply; larger reports use the queued file channel. Watch Send report also offers
+immediate messages and background application context for smaller reports.
+
+Watch **Share report text** and **Share report file** use the native watchOS share
+sheet independently of WatchLink's Watch Connectivity channel. Choose an available
+service, then copy/save on the iPhone. A compact summary can also be read on the
+Watch. Clipboard-style Copy is not implemented on watchOS. Transfers expose
+session state and error domain/code. File transport completion is distinguished
+from acknowledgement that the receiver validated and saved the report. Paired
+physical devices are required to validate these transports.

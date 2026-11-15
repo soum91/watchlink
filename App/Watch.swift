@@ -14,7 +14,19 @@ import SwiftUI
                         Text("Needs a dedicated App Group. Only the group's temporary cache link is changed.").font(.caption2)
                         Button(model.running ? "Scanning…" : "Run scan") { model.scan() }.disabled(model.running)
                         Button("Send report") { model.sendReport() }.disabled(model.running)
+                        ShareLink(item: model.report, subject: Text("WatchLink Watch report")) {
+                            Label("Share report text", systemImage: "square.and.arrow.up")
+                        }.disabled(!model.hasReport || model.running)
+                        ShareLink(item: WatchLinkModel.textReportURL) {
+                            Label("Share report file", systemImage: "doc")
+                        }.disabled(!model.hasReport || model.running)
+                        Text("For copy: share to Messages, then copy on iPhone. Or use Get Watch report in the iPhone app.").font(.caption2)
+                        Button("Check connection") { model.refreshConnection() }
                         Text(model.status).font(.caption2)
+                        Text(model.transferDetails).font(.caption2)
+                        NavigationLink("Compact summary") {
+                            ScrollView { Text(model.compactSummary).font(.system(size: 11, design: .monospaced)).padding() }
+                        }
                         NavigationLink("Read report") {
                             ScrollView { Text(model.report).font(.system(size: 10, design: .monospaced)).padding() }
                         }
