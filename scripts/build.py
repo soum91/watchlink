@@ -67,14 +67,14 @@ def build_apps(number):
             "SWIFT_OBJC_BRIDGING_HEADER": str(ROOT / "Native/Probe.h"), "ASSETCATALOG_COMPILER_APPICON_NAME": "AppIcon"}
     def target(watch):
         name = "WatchLinkWatch" if watch else "WatchLink"
-        properties = {"CFBundleDisplayName": "WatchLink", "NSLocalNetworkUsageDescription": "Transfer your WatchLink report directly between your Watch and iPhone on local Wi-Fi.", "NSBonjourServices": ["_watchlink._tcp"]}
+        properties = {"CFBundleDisplayName": "WatchLink", "NSBluetoothAlwaysUsageDescription": "Find your nearby WatchLink iPhone receiver and send your scan report directly over Bluetooth.", "NSLocalNetworkUsageDescription": "Transfer your WatchLink report directly between your Watch and iPhone on local Wi-Fi.", "NSBonjourServices": ["_watchlink._tcp"]}
         if watch:
             properties["NSAppTransportSecurity"] = {"NSAllowsArbitraryLoads": True}
             properties.update({"WKCompanionAppBundleIdentifier": "dev.watchlink.companion", "WKRunsIndependentlyOfCompanionApp": True})
         else:
             properties.update({"UILaunchScreen": {}, "UIApplicationSceneManifest": {"UIApplicationSupportsMultipleScenes": False}, "UISupportedInterfaceOrientations": ["UIInterfaceOrientationPortrait"]})
         result = {"type": "application", "platform": "watchOS" if watch else "iOS",
-                  "sources": [str(ROOT / "App/Shared.swift"), str(ROOT / "App/LocalReportLink.swift"), str(ROOT / ("App/Watch.swift" if watch else "App/Phone.swift")), str(ROOT / "Native/Probe.m"), resources["watchos" if watch else "ios"]],
+                  "sources": [str(ROOT / "App/BluetoothReportLink.swift"), str(ROOT / "App/ReportBluetoothProtocol.swift"), str(ROOT / "App/Shared.swift"), str(ROOT / "App/LocalReportLink.swift"), str(ROOT / ("App/Watch.swift" if watch else "App/Phone.swift")), str(ROOT / "Native/Probe.m"), resources["watchos" if watch else "ios"]],
                   "info": {"path": str(project_dir / (name + "-Info.plist")), "properties": properties},
                   "settings": {"base": {**base, "PRODUCT_BUNDLE_IDENTIFIER": "dev.watchlink.companion.watchapp" if watch else "dev.watchlink.companion", "TARGETED_DEVICE_FAMILY": "4" if watch else "1,2"}}, "scheme": {}}
         if not watch:

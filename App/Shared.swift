@@ -14,6 +14,7 @@ final class WatchLinkModel: NSObject, ObservableObject, WCSessionDelegate {
     @Published var lastWatchReceipt = ""
     private var reportRequestID: UUID?
     let localLink = LocalReportLink()
+    let bluetoothLink = BluetoothReportLink()
     private let worker = DispatchQueue(label: "dev.watchlink.probe")
     private var session: WCSession?
     static var reportURL: URL {
@@ -42,6 +43,13 @@ final class WatchLinkModel: NSObject, ObservableObject, WCSessionDelegate {
         localLink.onReport = { [weak self] data in
             guard let self else { throw CocoaError(.fileWriteUnknown) }
             try self.receive(data, channel: "local Wi-Fi")
+        }
+        bluetoothLink.onReport = { [weak self] data in
+            guard let self else { throw CocoaError(.fileWriteUnknown) }
+            try self.receive(data, channel: "Bluetooth")
+        }
+        bluetoothLink.reportProvider = {
+            try Self.validatedData(Data(contentsOf: Self.reportURL))
         }
         if hasReport { try? report.write(to: Self.textReportURL, atomically: true, encoding: .utf8) }
         if WCSession.isSupported() {
@@ -113,7 +121,7 @@ final class WatchLinkModel: NSObject, ObservableObject, WCSessionDelegate {
         DispatchQueue.main.async {
             self.transferDetails="\(channel): \(e.domain) / \(e.code). " + (self.session.map(self.connectionState) ?? "No session")
             if !self.status.hasPrefix("iPhone received") && !self.status.hasPrefix("Received companion") {
-                self.status="\(channel) failed: \(e.domain)/\(e.code). Use the Wi-Fi report transfer."
+                self.status="\(channel) failed: \(e.domain)/\(e.code). Use the nearby iPhone receiver."
                 #if os(watchOS)
                 self.showDirectSender=true
                 #endif
@@ -153,8 +161,9 @@ final class WatchLinkModel: NSObject, ObservableObject, WCSessionDelegate {
     private func useDirectReceiver(_ reason: String) {
         #if os(iOS)
         reportRequestID=nil
+        bluetoothLink.startReceiving()
         localLink.ensureReceiving()
-        status=reason + " Wi-Fi receiver opened below. On Watch, tap Send report and enter this address and code."
+        status=reason + " Nearby iPhone receiver opened below. On Watch, tap Send report and choose this receiver."
         #endif
     }
     func requestWatchReport() {
@@ -209,7 +218,7 @@ final class WatchLinkModel: NSObject, ObservableObject, WCSessionDelegate {
         guard let session, session.activationState == .activated, session.isReachable else {
             #if os(watchOS)
             showDirectSender=true
-            status="Enter the address and code shown in WatchLink on iPhone."
+            status="Choose the nearby iPhone receiver shown in WatchLink."
             #else
             useDirectReceiver("Watch Connectivity is unavailable.")
             #endif

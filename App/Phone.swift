@@ -22,14 +22,17 @@ import UIKit
                     }
                     Section("Watch") {
                         Button("Get Watch report") { model.requestWatchReport() }
-                        LocalReceiverView(link: model.localLink)
+                        BluetoothReceiverView(link: model.bluetoothLink)
+                        DisclosureGroup("Manual Wi-Fi fallback") {
+                            LocalReceiverView(link: model.localLink)
+                        }
                         if !model.lastWatchReceipt.isEmpty {
                             Text(model.lastWatchReceipt).font(.footnote).foregroundStyle(.green)
                         }
                         Button("Show saved Watch report") { model.showReceivedWatchReport() }
                         Button("Check companion connection") { model.refreshConnection() }
                         Text(model.transferDetails).font(.footnote).textSelection(.enabled)
-                        Text("Run a scan in WatchLink on Watch, then tap Send report. When the companion connection is unavailable, use the Wi-Fi address and code above.").font(.footnote)
+                        Text("Run a scan in WatchLink on Watch, then tap Send report and choose this receiver. The selected iPhone is remembered for the next transfer.").font(.footnote)
                         Text("Phone switching and a second native pairing are not implemented.").font(.footnote).foregroundStyle(.orange)
                     }
                     Section("Report") {
@@ -175,6 +178,22 @@ struct LocalReceiverView: View {
             }
             Text(link.status).font(.footnote)
             Text("On Watch: Send report → enter this address and code → Send report over HTTP. Keep both apps open on the same Wi-Fi. Allow Local Network access.").font(.footnote)
+        }.buttonStyle(.borderless)
+    }
+}
+
+struct BluetoothReceiverView: View {
+    @ObservedObject var link: BluetoothReportLink
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            if link.receiving {
+                Label(link.receiverName, systemImage: "iphone.radiowaves.left.and.right")
+                Button("Stop Bluetooth receiver") { link.stopReceiving(); link.status = "Bluetooth receiver stopped." }
+            } else {
+                Button("Make iPhone discoverable") { link.startReceiving() }
+            }
+            Text(link.status).font(.footnote)
+            Text("Keep WatchLink open on both devices and allow Bluetooth. Only this short-lived report receiver is advertised.").font(.footnote)
         }.buttonStyle(.borderless)
     }
 }

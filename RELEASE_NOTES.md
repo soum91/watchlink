@@ -1,8 +1,10 @@
-WatchLink 0.1.8 fixes the report workflow when Watch Connectivity does not recognize the companion.
+WatchLink 0.1.9 adds nearby iPhone discovery and direct Bluetooth report transfer.
 
-- Get Watch report starts the short-lived Wi-Fi receiver on unavailable, timed-out, or failed companion requests.
-- Send report on Watch opens the Wi-Fi form when the normal companion route is unavailable.
-- Keep the address, code, saved receipt, and transfer controls together; preserve the active code across repeated requests and prevent automatic List buttons from starting and stopping the receiver together.
-- Remove the unsupported reinstall diagnosis. Native companion registration is still unresolved, and physical Watch HTTP delivery remains unverified. Multi-pairing is not implemented.
+- On iPhone, Get Watch report arms a 2-minute Bluetooth receiver when Watch Connectivity is unavailable.
+- On Watch, Send report opens a nearby-iPhone picker. Choose the matching receiver name; report bytes transfer over Bluetooth with a persisted receipt. The last successful receiver is selected automatically on the next explicit send.
+- No IP or PIN entry is needed for this Bluetooth route. Manual HTTP is retained as a fallback. Both apps must remain open and Bluetooth access must be allowed.
+- Reports are capped at 128 KiB; malformed and incomplete streams are rejected, and the final write is acknowledged only after saving. No pairing records or keys are changed.
 
-Re-sign the combined iPhone + Watch IPA through EmberSign 0.2.97 or later. The phone-only IPA and Sileo package do not contain the Watch companion.
+The release tests framing and compiles both app targets. Physical Watch discovery/transfer remains unverified. Native multi-pairing and companion registration repair are not implemented.
+
+Update the combined package through EmberSign 0.2.97 or later.

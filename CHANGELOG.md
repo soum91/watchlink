@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.9
+
+- Advertise a short-lived iPhone report receiver using Core Bluetooth; Watch scans the dedicated service and lists nearby receiver names without IP or PIN entry.
+- Transfer reports directly over acknowledged Bluetooth writes, independent of Watch Connectivity registration and local Wi-Fi routing. Remember the last successfully selected receiver for automatic selection next time.
+- Bound frames and report assembly to 128 KiB and acknowledge the final commit only after report validation and persistence. Include framing tests at small and large negotiated write lengths, malformed messages, incomplete reports, and overflow.
+- Add Bluetooth permission descriptions and foreground permission/power/error states. Keep manual HTTP entry as an optional fallback.
+- Native multi-pairing is not implemented. Bluetooth framing is tested in CI; physical iPhone/Watch discovery and transfer remain unverified.
+
 ## 0.1.8
 
 - Get Watch report opens the direct HTTP receiver when Watch Connectivity is unavailable, times out, or returns a transfer error. A stale installed-app flag no longer blocks a reachable session.
