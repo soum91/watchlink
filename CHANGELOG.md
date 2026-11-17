@@ -1,5 +1,13 @@
 # Changelog
 
+## [v0.1.8] - 2026-11-15
+
+## Verified changes since v0.1.7
+
+- Open direct report transfer when companion connectivity fails ([`b3a7b6e1`](https://github.com/soum91/watchlink/commit/b3a7b6e1503bca780439f1c8ec3ba8b952442067); `App/LocalReportLink.swift`, `App/Phone.swift`, `App/Shared.swift`, and 4 more)
+
+[Inspect exact code changes](https://github.com/soum91/watchlink/compare/v0.1.7...v0.1.8)
+
 ## [v0.1.7] - 2026-11-15
 
 ## Verified changes since v0.1.6
