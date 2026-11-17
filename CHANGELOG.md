@@ -1,5 +1,13 @@
 # Changelog
 
+## [v0.1.9] - 2026-11-15
+
+## Verified changes since v0.1.8
+
+- Discover nearby iPhone receivers and transfer reports directly over Bluetooth ([`6b287a05`](https://github.com/soum91/watchlink/commit/6b287a059a3341feea0f0743a1d08f8125b24e35); `.github/workflows/release.yml`, `App/BluetoothReportLink.swift`, `App/Phone.swift`, and 7 more)
+
+[Inspect exact code changes](https://github.com/soum91/watchlink/compare/v0.1.8...v0.1.9)
+
 ## [v0.1.8] - 2026-11-15
 
 ## Verified changes since v0.1.7
