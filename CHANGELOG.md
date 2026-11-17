@@ -1,5 +1,14 @@
 # Changelog
 
+## [v0.1.3] - 2026-11-14
+
+## Verified changes since v0.1.2
+
+- Bound storage findings and preserve Watch report transfer size limits ([`1b001dd8`](https://github.com/soum91/watchlink/commit/1b001dd890625ba8ede7554ceb383d32859280d9); `Native/Probe.m`)
+- Add worse_query query modes and bounded multi-pairing access investigation ([`2a359a61`](https://github.com/soum91/watchlink/commit/2a359a616f421b2f1c6b24eba4d51f4d224d3a7d); `.github/workflows/release.yml`, `Native/Probe.m`, `README.md`, and 5 more)
+
+[Inspect exact code changes](https://github.com/soum91/watchlink/compare/v0.1.2...v0.1.3)
+
 ## [v0.1.2] - 2026-11-14
 
 ## Verified changes since v0.1.1
