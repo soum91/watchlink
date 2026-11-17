@@ -1,5 +1,13 @@
 # Changelog
 
+## [v0.1.6] - 2026-11-15
+
+## Verified changes since v0.1.5
+
+- Harden TCP report delivery and validate actual fragmented network transfers ([`852b3555`](https://github.com/soum91/watchlink/commit/852b3555865dceac9b3d493d03136a8e60eda5ca); `.github/workflows/release.yml`, `App/LocalReportLink.swift`, `App/Phone.swift`, and 6 more)
+
+[Inspect exact code changes](https://github.com/soum91/watchlink/compare/v0.1.5...v0.1.6)
+
 ## [v0.1.5] - 2026-11-15
 
 ## Verified changes since v0.1.4
