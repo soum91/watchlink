@@ -1,5 +1,18 @@
 # Changelog
 
+## [v0.1.1] - 2026-11-14
+
+## Verified changes since v0.1.0
+
+- Publish native probe fixes with explicit partial UI validation; retain manual UI suite ([`b3fc369b`](https://github.com/soum91/watchlink/commit/b3fc369bade0060de66106c53308036ffa92a371); `.github/workflows/release.yml`, `RELEASE_NOTES.md`, `VALIDATION.md`)
+- Dismiss identified first-use keyboard tutorial before testing Files cancellation ([`9bae6369`](https://github.com/soum91/watchlink/commit/9bae636920024530e018dac8638b3ec4fe3c0f13); `tests/ui/ReportActionsTests.swift`)
+- Match native share-sheet and document-picker accessibility elements ([`3e4e97c7`](https://github.com/soum91/watchlink/commit/3e4e97c7c0e316dcb4fd10150a4a23399aa10123); `tests/ui/ReportActionsTests.swift`)
+- Allow cold simulator builds to finish; build native packages in parallel ([`aac6979a`](https://github.com/soum91/watchlink/commit/aac6979acea2405ef93efc8f60c8734338819cfc); `.github/workflows/release.yml`, `VALIDATION.md`, `scripts/ui_smoke.py`, and 1 more)
+- Use stable iPhone simulator checks with bounded setup and separate Watch build ([`0a89545c`](https://github.com/soum91/watchlink/commit/0a89545cd17a012c578868ab49c7a1fcd75861ec); `.github/workflows/release.yml`, `scripts/ui_smoke.py`, `tests/ui/ReportActionsTests.swift`)
+- Fix independent report actions, guard exports, and add simulator regression checks ([`fdfc2def`](https://github.com/soum91/watchlink/commit/fdfc2def8f0aac3a1c54f1c22cfdcba12371b072); `.github/workflows/release.yml`, `App/Phone.swift`, `App/Shared.swift`, and 8 more)
+
+[Inspect exact code changes](https://github.com/soum91/watchlink/compare/v0.1.0...v0.1.1)
+
 ## [v0.1.0] - 2026-11-13
 
 ## Verified changes since project start
