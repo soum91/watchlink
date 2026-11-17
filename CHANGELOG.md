@@ -1,5 +1,13 @@
 # Changelog
 
+## [v0.1.2] - 2026-11-14
+
+## Verified changes since v0.1.1
+
+- Build 0.1.2 using Xcode metadata, modern Watch layout and optional App Groups ([`a4c007ef`](https://github.com/soum91/watchlink/commit/a4c007ef9ff35eb0a51b5d75732ecb6a8f69c526); `.github/workflows/release.yml`, `README.md`, `RELEASE_NOTES.md`, and 8 more)
+
+[Inspect exact code changes](https://github.com/soum91/watchlink/compare/v0.1.1...v0.1.2)
+
 ## [v0.1.1] - 2026-11-14
 
 ## Verified changes since v0.1.0
