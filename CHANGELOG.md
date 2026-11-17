@@ -1,5 +1,14 @@
 # Changelog
 
+## [v0.1.7] - 2026-11-15
+
+## Verified changes since v0.1.6
+
+- Validate private numeric HTTP destinations and the Watch ATS exception ([`0354969b`](https://github.com/soum91/watchlink/commit/0354969b679ef378415c73fc12d6817db0abe6c7); `App/LocalReportLink.swift`, `scripts/build.py`, `scripts/verify_artifacts.py`, and 1 more)
+- Use supported URLSession HTTP for Watch report delivery and test the production receiver ([`ba8fee34`](https://github.com/soum91/watchlink/commit/ba8fee349fa05b4ce84e8b843ec1ac6ec7f406af); `App/LocalReportLink.swift`, `App/Phone.swift`, `App/Shared.swift`, and 7 more)
+
+[Inspect exact code changes](https://github.com/soum91/watchlink/compare/v0.1.6...v0.1.7)
+
 ## [v0.1.6] - 2026-11-15
 
 ## Verified changes since v0.1.5
