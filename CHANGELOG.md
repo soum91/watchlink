@@ -1,5 +1,14 @@
 # Changelog
 
+## [v0.1.4] - 2026-11-15
+
+## Verified changes since v0.1.3
+
+- Read transfer metadata from the WCSessionFile object ([`f397a936`](https://github.com/soum91/watchlink/commit/f397a9360b996e0d426958caaad916461cd3ec11); `App/Shared.swift`)
+- Retrieve Watch reports from iPhone; add acknowledged delivery and native Watch sharing ([`3e74ab9d`](https://github.com/soum91/watchlink/commit/3e74ab9d7ceb4f62525d955c933dee329c93d992); `App/Phone.swift`, `App/Shared.swift`, `App/Watch.swift`, and 4 more)
+
+[Inspect exact code changes](https://github.com/soum91/watchlink/compare/v0.1.3...v0.1.4)
+
 ## [v0.1.3] - 2026-11-14
 
 ## Verified changes since v0.1.2
