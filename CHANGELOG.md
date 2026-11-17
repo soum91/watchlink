@@ -1,5 +1,13 @@
 # Changelog
 
+## [v0.1.5] - 2026-11-15
+
+## Verified changes since v0.1.4
+
+- Add explicit local Wi-Fi Watch report delivery independent of companion association ([`31d76b71`](https://github.com/soum91/watchlink/commit/31d76b71b01faec3690b63b78cd9cf3161c9d35d); `App/LocalReportLink.swift`, `App/Phone.swift`, `App/Shared.swift`, and 7 more)
+
+[Inspect exact code changes](https://github.com/soum91/watchlink/compare/v0.1.4...v0.1.5)
+
 ## [v0.1.4] - 2026-11-15
 
 ## Verified changes since v0.1.3
