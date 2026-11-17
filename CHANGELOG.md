@@ -1,5 +1,15 @@
 # Changelog
 
+## [v0.1.0] - 2026-11-13
+
+## Verified changes since project start
+
+- Restrict document exporter to iOS so the Watch target compiles ([`cd0410aa`](https://github.com/soum91/watchlink/commit/cd0410aafbfa0e0fbaddb9a9ee576bb8fe915752); `App/Shared.swift`)
+- Use dedicated Xcode 27 runner for native Watch build ([`8c9ec4bf`](https://github.com/soum91/watchlink/commit/8c9ec4bf34b3f137ed70c4c802c411213520692c); `.github/workflows/release.yml`)
+- Add WatchLink pairing access probe, companion apps, and release pipeline ([`5524154e`](https://github.com/soum91/watchlink/commit/5524154e5b0ef8a73abf96ba37ee0c8a985cfdd6); `.github/workflows/release.yml`, `.gitignore`, `App/Phone.swift`, and 25 more)
+
+[Inspect exact code changes](https://github.com/soum91/watchlink/commits/v0.1.0)
+
 ## 0.1.10
 
 - Invoke the NRPairedDeviceRegistry paired-device query selectors (sharedInstance, getPairedDevices, getDevices, getActivePairedDevice) read-only, reporting only call outcome, nil/thrown status, result and element class names, array counts, and the active device's property names. No property values, identifiers, names, serials, or key material are read or exported, and nothing is modified.
