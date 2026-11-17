@@ -1,5 +1,13 @@
 # Changelog
 
+## [v0.1.10] - 2026-11-15
+
+## Verified changes since v0.1.9
+
+- Invoke NanoRegistry paired-device query API read-only in the probe ([`391b448c`](https://github.com/soum91/watchlink/commit/391b448cf786d63965f0aaa87573a87b574cd185); `Native/Probe.m`, `RELEASE_NOTES.md`, `VERSION`)
+
+[Inspect exact code changes](https://github.com/soum91/watchlink/compare/v0.1.9...v0.1.10)
+
 ## [v0.1.9] - 2026-11-15
 
 ## Verified changes since v0.1.8
